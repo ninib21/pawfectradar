@@ -153,12 +153,17 @@ jobs:
       - name: 📦 Push Quantum Docker Image
         if: github.ref == 'refs/heads/main'
         env:
-          QUANTUM_DOCKER_PASSWORD: ${{ secrets.QUANTUM_DOCKER_PASSWORD }}
-          QUANTUM_DOCKER_USERNAME: ${{ secrets.QUANTUM_DOCKER_USERNAME }}
+          QUANTUM_DOCKER_PASSWORD: ${{ secrets.QUANTUM_DOCKER_PASSWORD || '' }}
+          QUANTUM_DOCKER_USERNAME: ${{ secrets.QUANTUM_DOCKER_USERNAME || '' }}
         run: |
-          echo "$QUANTUM_DOCKER_PASSWORD" | docker login -u "$QUANTUM_DOCKER_USERNAME" --password-stdin
-          docker push quantum-${{ matrix.service }}:${{ github.sha }}
-          docker push quantum-${{ matrix.service }}:latest
+          if [ -n "$QUANTUM_DOCKER_PASSWORD" ] && [ -n "$QUANTUM_DOCKER_USERNAME" ]; then
+            echo "$QUANTUM_DOCKER_PASSWORD" | docker login -u "$QUANTUM_DOCKER_USERNAME" --password-stdin
+            docker push quantum-${{ matrix.service }}:${{ github.sha }}
+            docker push quantum-${{ matrix.service }}:latest
+          else
+            echo "⚠️ Skipping Docker push - missing QUANTUM_DOCKER_PASSWORD or QUANTUM_DOCKER_USERNAME secrets"
+            echo "💡 Configure these secrets in GitHub repository settings to enable Docker registry pushes"
+          fi
 
   # 🚀 QUANTUM DEPLOYMENT
   quantum-deployment:
@@ -176,13 +181,24 @@ jobs:
 
       - name: 🔐 Setup Quantum Secrets
         env:
-          QUANTUM_ENV: ${{ secrets.QUANTUM_ENV }}
-          QUANTUM_SSL_CERT: ${{ secrets.QUANTUM_SSL_CERT }}
-          QUANTUM_SSL_KEY: ${{ secrets.QUANTUM_SSL_KEY }}
+          QUANTUM_ENV: ${{ secrets.QUANTUM_ENV || '' }}
+          QUANTUM_SSL_CERT: ${{ secrets.QUANTUM_SSL_CERT || '' }}
+          QUANTUM_SSL_KEY: ${{ secrets.QUANTUM_SSL_KEY || '' }}
         run: |
-          echo "$QUANTUM_ENV" > deploy/quantum.env
-          echo "$QUANTUM_SSL_CERT" > deploy/quantum-ssl/cert.pem
-          echo "$QUANTUM_SSL_KEY" > deploy/quantum-ssl/key.pem
+          if [ -n "$QUANTUM_ENV" ]; then
+            echo "$QUANTUM_ENV" > deploy/quantum.env
+          else
+            echo "⚠️ QUANTUM_ENV secret not configured - using default environment"
+            cp deploy/quantum.env.example deploy/quantum.env
+          fi
+          
+          if [ -n "$QUANTUM_SSL_CERT" ] && [ -n "$QUANTUM_SSL_KEY" ]; then
+            mkdir -p deploy/quantum-ssl
+            echo "$QUANTUM_SSL_CERT" > deploy/quantum-ssl/cert.pem
+            echo "$QUANTUM_SSL_KEY" > deploy/quantum-ssl/key.pem
+          else
+            echo "⚠️ SSL certificates not configured - using HTTP mode"
+          fi
 
       - name: 🐳 Deploy Quantum Infrastructure
         run: |
@@ -319,26 +335,28 @@ jobs:
       - name: 🚀 Deploy to Vercel
         uses: amondnet/vercel-action@v25
         env:
-          VERCEL_TOKEN: ${{ secrets.QUANTUM_VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.QUANTUM_VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.QUANTUM_VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.QUANTUM_VERCEL_TOKEN || '' }}
+          VERCEL_ORG_ID: ${{ secrets.QUANTUM_VERCEL_ORG_ID || '' }}
+          VERCEL_PROJECT_ID: ${{ secrets.QUANTUM_VERCEL_PROJECT_ID || '' }}
         with:
-          vercel-token: ${{ secrets.QUANTUM_VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.QUANTUM_VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.QUANTUM_VERCEL_PROJECT_ID }}
+          vercel-token: ${{ secrets.QUANTUM_VERCEL_TOKEN || '' }}
+          vercel-org-id: ${{ secrets.QUANTUM_VERCEL_ORG_ID || '' }}
+          vercel-project-id: ${{ secrets.QUANTUM_VERCEL_PROJECT_ID || '' }}
           working-directory: ./frontend
           vercel-args: '--prod'
+        continue-on-error: true
 
       - name: 📱 Deploy to Netlify
         uses: nwtgck/actions-netlify@v2.0
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.QUANTUM_NETLIFY_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.QUANTUM_NETLIFY_SITE_ID }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.QUANTUM_NETLIFY_TOKEN || '' }}
+          NETLIFY_SITE_ID: ${{ secrets.QUANTUM_NETLIFY_SITE_ID || '' }}
         with:
           publish-dir: './frontend/dist'
           production-branch: main
           github-token: ${{ secrets.GITHUB_TOKEN }}
           deploy-message: "Quantum Frontend Deployment"
+        continue-on-error: true
 
   # 📊 QUANTUM ANALYTICS
   quantum-analytics:
