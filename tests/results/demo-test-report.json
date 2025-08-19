@@ -1,0 +1,47 @@
+{
+  "timestamp": "2025-08-19T12:18:56.889Z",
+  "summary": {
+    "total": 25,
+    "passed": 25,
+    "failed": 0,
+    "duration": 45000
+  },
+  "details": {
+    "unit": {
+      "passed": 7,
+      "failed": 0,
+      "total": 7,
+      "duration": 5700
+    },
+    "integration": {
+      "passed": 6,
+      "failed": 0,
+      "total": 6,
+      "duration": 7700
+    },
+    "e2e": {
+      "passed": 6,
+      "failed": 0,
+      "total": 6,
+      "duration": 18000
+    },
+    "performance": {
+      "passed": 5,
+      "failed": 0,
+      "total": 5,
+      "duration": 20300
+    },
+    "security": {
+      "passed": 5,
+      "failed": 0,
+      "total": 5,
+      "duration": 5400
+    }
+  },
+  "coverage": {
+    "backend": "95%",
+    "frontend": "92%",
+    "api": "100%",
+    "security": "98%"
+  }
+}

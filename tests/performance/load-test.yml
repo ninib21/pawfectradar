@@ -1,0 +1,223 @@
+config:
+  target: 'http://localhost:3001'
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up phase"
+    - duration: 120
+      arrivalRate: 50
+      name: "Sustained load phase"
+    - duration: 60
+      arrivalRate: 100
+      name: "Peak load phase"
+    - duration: 30
+      arrivalRate: 200
+      name: "Stress test phase"
+    - duration: 60
+      arrivalRate: 10
+      name: "Cool down phase"
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+      X-Client: 'quantum-load-test'
+      X-Version: '1.0.0'
+      X-Quantum: 'true'
+  processor: './tests/performance/load-test-processor.js'
+  output: './tests/results/load-test-results.json'
+
+scenarios:
+  - name: "Booking API Load Test"
+    weight: 70
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ $randomEmail() }}"
+            password: "SecurePassword123!"
+          capture:
+            - json: "$.access_token"
+              as: "authToken"
+      
+      - get:
+          url: "/api/bookings"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - post:
+          url: "/api/bookings"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            sitterId: "{{ $randomString() }}"
+            petIds: ["{{ $randomString() }}"]
+            startTime: "{{ $isoTimestamp() }}"
+            endTime: "{{ $isoTimestamp() }}"
+            location:
+              address: "{{ $randomString() }}"
+              latitude: {{ $randomNumber(40, 41) }}
+              longitude: {{ $randomNumber(-74, -73) }}
+            specialInstructions: "{{ $randomString() }}"
+      
+      - get:
+          url: "/api/bookings/{{ $randomString() }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - put:
+          url: "/api/bookings/{{ $randomString() }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            status: "confirmed"
+
+  - name: "Search and Discovery Load Test"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/sitters"
+          qs:
+            location: "{{ $randomString() }}"
+            radius: "{{ $randomNumber(5, 50) }}"
+            rating: "{{ $randomNumber(1, 5) }}"
+      
+      - get:
+          url: "/api/sitters/{{ $randomString() }}"
+      
+      - get:
+          url: "/api/sitters/{{ $randomString() }}/reviews"
+          qs:
+            page: "{{ $randomNumber(1, 10) }}"
+            limit: "{{ $randomNumber(5, 20) }}"
+
+  - name: "Messaging Load Test"
+    weight: 10
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ $randomEmail() }}"
+            password: "SecurePassword123!"
+          capture:
+            - json: "$.access_token"
+              as: "authToken"
+      
+      - get:
+          url: "/api/messages"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - post:
+          url: "/api/messages"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            recipientId: "{{ $randomString() }}"
+            content: "{{ $randomString() }}"
+            bookingId: "{{ $randomString() }}"
+      
+      - get:
+          url: "/api/messages/{{ $randomString() }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+  - name: "Quantum Security Load Test"
+    weight: 5
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ $randomEmail() }}"
+            password: "SecurePassword123!"
+            quantumEncrypted: true
+          capture:
+            - json: "$.access_token"
+              as: "authToken"
+      
+      - post:
+          url: "/api/bookings"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            X-Quantum-Encryption: "true"
+            X-Quantum-Security: "military-grade"
+          json:
+            sitterId: "{{ $randomString() }}"
+            petIds: ["{{ $randomString() }}"]
+            startTime: "{{ $isoTimestamp() }}"
+            endTime: "{{ $isoTimestamp() }}"
+            location:
+              address: "{{ $randomString() }}"
+              latitude: {{ $randomNumber(40, 41) }}
+              longitude: {{ $randomNumber(-74, -73) }}
+            quantumEncrypted: true
+      
+      - get:
+          url: "/api/quantum/health"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            X-Quantum-Security: "military-grade"
+
+  - name: "Payment Processing Load Test"
+    weight: 3
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ $randomEmail() }}"
+            password: "SecurePassword123!"
+          capture:
+            - json: "$.access_token"
+              as: "authToken"
+      
+      - post:
+          url: "/api/payments/process"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            bookingId: "{{ $randomString() }}"
+            amount: {{ $randomNumber(50, 500) }}
+            currency: "USD"
+            paymentMethod: "card"
+            cardToken: "{{ $randomString() }}"
+      
+      - get:
+          url: "/api/payments/{{ $randomString() }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+  - name: "Analytics and Monitoring Load Test"
+    weight: 2
+    flow:
+      - post:
+          url: "/api/analytics/event"
+          json:
+            eventType: "page_view"
+            userId: "{{ $randomString() }}"
+            sessionId: "{{ $randomString() }}"
+            timestamp: "{{ $isoTimestamp() }}"
+            metadata:
+              page: "{{ $randomString() }}"
+              userAgent: "{{ $randomString() }}"
+              ipAddress: "{{ $randomString() }}"
+      
+      - post:
+          url: "/api/analytics/event"
+          json:
+            eventType: "booking_created"
+            userId: "{{ $randomString() }}"
+            sessionId: "{{ $randomString() }}"
+            timestamp: "{{ $isoTimestamp() }}"
+            metadata:
+              bookingId: "{{ $randomString() }}"
+              amount: {{ $randomNumber(50, 500) }}
+              sitterId: "{{ $randomString() }}"
+      
+      - get:
+          url: "/api/analytics/dashboard"
+          qs:
+            userId: "{{ $randomString() }}"
+            dateRange: "last_7_days"
+      
+      - get:
+          url: "/api/monitoring/health"
+          headers:
+            X-Quantum-Monitoring: "true"
