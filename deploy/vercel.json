@@ -1,0 +1,143 @@
+{
+  "version": 2,
+  "name": "quantum-pawfectsitters-frontend",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "quantum-optimization": true,
+        "quantum-security": "military-grade",
+        "quantum-compression": true
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1",
+      "headers": {
+        "X-Quantum-Security": "military-grade",
+        "X-Quantum-Encryption": "post-quantum",
+        "X-Quantum-Monitoring": "enabled",
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "1; mode=block",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.quantum-pawfectsitters.com wss://ws.quantum-pawfectsitters.com; frame-ancestors 'none';"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html",
+      "headers": {
+        "X-Quantum-Security": "military-grade",
+        "X-Quantum-Encryption": "post-quantum",
+        "X-Quantum-Monitoring": "enabled",
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "1; mode=block",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.quantum-pawfectsitters.com wss://ws.quantum-pawfectsitters.com; frame-ancestors 'none';"
+      }
+    }
+  ],
+  "env": {
+    "REACT_APP_API_URL": "https://api.quantum-pawfectsitters.com",
+    "REACT_APP_WEBSOCKET_URL": "wss://ws.quantum-pawfectsitters.com",
+    "REACT_APP_QUANTUM_ENABLED": "true",
+    "REACT_APP_QUANTUM_AUTH": "true",
+    "REACT_APP_QUANTUM_ENCRYPTION": "true",
+    "REACT_APP_QUANTUM_BIOMETRICS": "true"
+  },
+  "functions": {
+    "frontend/api/**/*.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Quantum-Security",
+          "value": "military-grade"
+        },
+        {
+          "key": "X-Quantum-Encryption",
+          "value": "post-quantum"
+        },
+        {
+          "key": "X-Quantum-Monitoring",
+          "value": "enabled"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/api",
+      "destination": "https://api.quantum-pawfectsitters.com",
+      "permanent": true,
+      "headers": {
+        "X-Quantum-Redirect": "api-gateway"
+      }
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://api.quantum-pawfectsitters.com/api/$1"
+    }
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "github": {
+    "silent": true
+  },
+  "build": {
+    "env": {
+      "QUANTUM_BUILD_OPTIMIZATION": "true",
+      "QUANTUM_SECURITY_LEVEL": "military-grade",
+      "QUANTUM_ENCRYPTION": "post-quantum"
+    }
+  },
+  "devCommand": "npm run dev:quantum",
+  "buildCommand": "npm run build:quantum",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "npm ci --quantum-optimized",
+  "framework": "react",
+  "regions": ["iad1", "sfo1", "hnd1", "fra1"],
+  "functions": {
+    "frontend/api/**/*.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  }
+}

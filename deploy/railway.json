@@ -1,0 +1,271 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "deploy/Dockerfile.quantum",
+    "buildCommand": "npm run build:quantum",
+    "installCommand": "npm ci --quantum-optimized"
+  },
+  "deploy": {
+    "startCommand": "node --quantum-optimized dist/main.js",
+    "healthcheckPath": "/quantum-health",
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "NODE_ENV": "quantum-production",
+        "QUANTUM_SECURITY_LEVEL": "military-grade",
+        "QUANTUM_ENCRYPTION": "post-quantum",
+        "QUANTUM_KEY_DISTRIBUTION": "BB84",
+        "QUANTUM_RANDOM_GENERATOR": "quantum-entanglement",
+        "QUANTUM_MONITORING_ENABLED": "true",
+        "QUANTUM_THREAT_DETECTION": "true",
+        "QUANTUM_JWT_SECRET": "${QUANTUM_JWT_SECRET}",
+        "QUANTUM_DATABASE_URL": "${QUANTUM_DATABASE_URL}",
+        "QUANTUM_REDIS_URL": "${QUANTUM_REDIS_URL}",
+        "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}",
+        "CLOUDINARY_CLOUD_NAME": "${CLOUDINARY_CLOUD_NAME}",
+        "CLOUDINARY_API_KEY": "${CLOUDINARY_API_KEY}",
+        "CLOUDINARY_API_SECRET": "${CLOUDINARY_API_SECRET}",
+        "QUANTUM_SECURITY_KEY": "${QUANTUM_SECURITY_KEY}",
+        "QUANTUM_ENCRYPTION_KEY": "${QUANTUM_ENCRYPTION_KEY}",
+        "QUANTUM_SIGNING_KEY": "${QUANTUM_SIGNING_KEY}",
+        "QUANTUM_API_KEY": "${QUANTUM_API_KEY}",
+        "QUANTUM_WEBHOOK_SECRET": "${QUANTUM_WEBHOOK_SECRET}",
+        "QUANTUM_SMTP_HOST": "${QUANTUM_SMTP_HOST}",
+        "QUANTUM_SMTP_PORT": "${QUANTUM_SMTP_PORT}",
+        "QUANTUM_SMTP_USER": "${QUANTUM_SMTP_USER}",
+        "QUANTUM_SMTP_PASSWORD": "${QUANTUM_SMTP_PASSWORD}",
+        "QUANTUM_ALERT_EMAIL": "${QUANTUM_ALERT_EMAIL}",
+        "QUANTUM_ALERT_SLACK": "${QUANTUM_ALERT_SLACK}",
+        "QUANTUM_GRAFANA_PASSWORD": "${QUANTUM_GRAFANA_PASSWORD}",
+        "QUANTUM_REDIS_PASSWORD": "${QUANTUM_REDIS_PASSWORD}",
+        "QUANTUM_ELASTIC_PASSWORD": "${QUANTUM_ELASTIC_PASSWORD}",
+        "QUANTUM_RABBITMQ_PASS": "${QUANTUM_RABBITMQ_PASS}",
+        "QUANTUM_DB_PASSWORD": "${QUANTUM_DB_PASSWORD}"
+      },
+      "secrets": {
+        "QUANTUM_JWT_SECRET": "required",
+        "QUANTUM_DATABASE_URL": "required",
+        "QUANTUM_REDIS_URL": "required",
+        "STRIPE_SECRET_KEY": "required",
+        "CLOUDINARY_CLOUD_NAME": "required",
+        "CLOUDINARY_API_KEY": "required",
+        "CLOUDINARY_API_SECRET": "required",
+        "QUANTUM_SECURITY_KEY": "required",
+        "QUANTUM_ENCRYPTION_KEY": "required",
+        "QUANTUM_SIGNING_KEY": "required",
+        "QUANTUM_API_KEY": "required",
+        "QUANTUM_WEBHOOK_SECRET": "required",
+        "QUANTUM_SMTP_HOST": "required",
+        "QUANTUM_SMTP_PORT": "required",
+        "QUANTUM_SMTP_USER": "required",
+        "QUANTUM_SMTP_PASSWORD": "required",
+        "QUANTUM_ALERT_EMAIL": "required",
+        "QUANTUM_ALERT_SLACK": "required",
+        "QUANTUM_GRAFANA_PASSWORD": "required",
+        "QUANTUM_REDIS_PASSWORD": "required",
+        "QUANTUM_ELASTIC_PASSWORD": "required",
+        "QUANTUM_RABBITMQ_PASS": "required",
+        "QUANTUM_DB_PASSWORD": "required"
+      }
+    },
+    "staging": {
+      "variables": {
+        "NODE_ENV": "quantum-staging",
+        "QUANTUM_SECURITY_LEVEL": "military-grade",
+        "QUANTUM_ENCRYPTION": "post-quantum",
+        "QUANTUM_KEY_DISTRIBUTION": "BB84",
+        "QUANTUM_RANDOM_GENERATOR": "quantum-entanglement",
+        "QUANTUM_MONITORING_ENABLED": "true",
+        "QUANTUM_THREAT_DETECTION": "true"
+      }
+    },
+    "development": {
+      "variables": {
+        "NODE_ENV": "quantum-development",
+        "QUANTUM_SECURITY_LEVEL": "military-grade",
+        "QUANTUM_ENCRYPTION": "post-quantum",
+        "QUANTUM_KEY_DISTRIBUTION": "BB84",
+        "QUANTUM_RANDOM_GENERATOR": "quantum-entanglement",
+        "QUANTUM_MONITORING_ENABLED": "true",
+        "QUANTUM_THREAT_DETECTION": "true",
+        "QUANTUM_DEBUG_ENABLED": "true"
+      }
+    }
+  },
+  "services": [
+    {
+      "name": "quantum-api-gateway",
+      "source": {
+        "image": "quantum-api-gateway:latest"
+      },
+      "domains": [
+        {
+          "name": "api.quantum-pawfectsitters.com",
+          "environment": "production"
+        },
+        {
+          "name": "api-staging.quantum-pawfectsitters.com",
+          "environment": "staging"
+        }
+      ],
+      "variables": {
+        "PORT": "3001",
+        "QUANTUM_SERVICE_TYPE": "api-gateway"
+      }
+    },
+    {
+      "name": "quantum-auth-service",
+      "source": {
+        "image": "quantum-auth-service:latest"
+      },
+      "variables": {
+        "PORT": "3002",
+        "QUANTUM_SERVICE_TYPE": "auth-service"
+      }
+    },
+    {
+      "name": "quantum-user-service",
+      "source": {
+        "image": "quantum-user-service:latest"
+      },
+      "variables": {
+        "PORT": "3003",
+        "QUANTUM_SERVICE_TYPE": "user-service"
+      }
+    },
+    {
+      "name": "quantum-booking-service",
+      "source": {
+        "image": "quantum-booking-service:latest"
+      },
+      "variables": {
+        "PORT": "3004",
+        "QUANTUM_SERVICE_TYPE": "booking-service"
+      }
+    },
+    {
+      "name": "quantum-payment-service",
+      "source": {
+        "image": "quantum-payment-service:latest"
+      },
+      "variables": {
+        "PORT": "3005",
+        "QUANTUM_SERVICE_TYPE": "payment-service"
+      }
+    },
+    {
+      "name": "quantum-messaging-service",
+      "source": {
+        "image": "quantum-messaging-service:latest"
+      },
+      "variables": {
+        "PORT": "3006",
+        "QUANTUM_SERVICE_TYPE": "messaging-service"
+      }
+    },
+    {
+      "name": "quantum-analytics-service",
+      "source": {
+        "image": "quantum-analytics-service:latest"
+      },
+      "variables": {
+        "PORT": "3007",
+        "QUANTUM_SERVICE_TYPE": "analytics-service"
+      }
+    }
+  ],
+  "databases": [
+    {
+      "name": "quantum-postgres",
+      "type": "postgresql",
+      "version": "15",
+      "variables": {
+        "POSTGRES_DB": "quantum_pawfectsitters",
+        "POSTGRES_USER": "quantum_user",
+        "QUANTUM_ENCRYPTION_ENABLED": "true",
+        "QUANTUM_BACKUP_ENABLED": "true"
+      }
+    },
+    {
+      "name": "quantum-redis",
+      "type": "redis",
+      "version": "7",
+      "variables": {
+        "QUANTUM_ENCRYPTION_ENABLED": "true",
+        "QUANTUM_PERSISTENCE_ENABLED": "true"
+      }
+    }
+  ],
+  "monitoring": {
+    "enabled": true,
+    "metrics": [
+      "cpu_usage",
+      "memory_usage",
+      "disk_usage",
+      "network_io",
+      "response_time",
+      "error_rate",
+      "quantum_security_events",
+      "quantum_threat_detection"
+    ],
+    "alerts": [
+      {
+        "name": "quantum-high-cpu",
+        "condition": "cpu_usage > 80",
+        "duration": "5m",
+        "notification": {
+          "type": "email",
+          "recipients": ["alerts@quantum-pawfectsitters.com"]
+        }
+      },
+      {
+        "name": "quantum-high-memory",
+        "condition": "memory_usage > 85",
+        "duration": "5m",
+        "notification": {
+          "type": "email",
+          "recipients": ["alerts@quantum-pawfectsitters.com"]
+        }
+      },
+      {
+        "name": "quantum-security-threat",
+        "condition": "quantum_security_events > 10",
+        "duration": "1m",
+        "notification": {
+          "type": "slack",
+          "webhook": "${QUANTUM_ALERT_SLACK}"
+        }
+      }
+    ]
+  },
+  "security": {
+    "encryption": {
+      "at_rest": true,
+      "in_transit": true,
+      "algorithm": "AES-256-GCM"
+    },
+    "authentication": {
+      "type": "quantum-enhanced",
+      "multi_factor": true,
+      "biometric": true
+    },
+    "compliance": [
+      "GDPR",
+      "CCPA",
+      "PCI_DSS",
+      "SOC2"
+    ]
+  },
+  "scaling": {
+    "auto": true,
+    "min_instances": 2,
+    "max_instances": 10,
+    "cpu_threshold": 70,
+    "memory_threshold": 80
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "agents": [
+    {
+      "name": "SoftwareArchitectBot",
+      "role": "Architect the entire project system",
+      "triggers": [
+        "system start",
+        "PRD update"
+      ],
+      "prompt": "SoftwareArchitectBot, generate the system architecture from CreateAIPrd.md",
+      "enhanced": true
+    },
+    {
+      "name": "ProjectManagerBot",
+      "role": "Breaks down PRD into milestones and assigns tasks",
+      "triggers": [
+        "project kickoff",
+        "task reassignment"
+      ],
+      "prompt": "ProjectManagerBot, break down the PRD into tasks and dispatch",
+      "enhanced": true
+    },
+    {
+      "name": "UIUXBot",
+      "role": "Builds UI flows and layouts",
+      "triggers": [
+        "ui/",
+        "design update"
+      ],
+      "prompt": "UIUXBot, generate all Figma-ready UI views for onboarding, dashboard, and sitter profiles",
+      "enhanced": true
+    },
+    {
+      "name": "FrontendBot",
+      "role": "Implements frontend logic and components",
+      "triggers": [
+        "components/",
+        "frontend/"
+      ],
+      "prompt": "FrontendBot, implement auth flow, dashboard layout, and sitter listing page using React",
+      "enhanced": true
+    },
+    {
+      "name": "LowCodeBot",
+      "role": "Builds no-code visual logic",
+      "triggers": [
+        "nocode/",
+        "flowcharts/"
+      ],
+      "prompt": "LowCodeBot, convert booking flow into Bubble.io logic",
+      "enhanced": true
+    },
+    {
+      "name": "FullStackBot",
+      "role": "Connects frontend and backend",
+      "triggers": [
+        "shared/",
+        "hooks/",
+        "api/"
+      ],
+      "prompt": "FullStackBot, connect auth UI to backend and handle state sync",
+      "enhanced": true
+    },
+    {
+      "name": "AImlBot",
+      "role": "Implements AI/ML logic",
+      "triggers": [
+        "ai/",
+        "ml/",
+        "recommendation/"
+      ],
+      "prompt": "AImlBot, generate trust score model for sitters and matchmaking engine",
+      "enhanced": true
+    },
+    {
+      "name": "DevOpsBot",
+      "role": "Manages deployments and infrastructure",
+      "triggers": [
+        "deploy/",
+        ".env",
+        "config/"
+      ],
+      "prompt": "DevOpsBot, set up CI/CD to Vercel + staging for QA",
+      "enhanced": true
+    },
+    {
+      "name": "QABot",
+      "role": "Runs automated tests",
+      "triggers": [
+        "tests/",
+        "errors/",
+        "debug/"
+      ],
+      "prompt": "QABot, generate Cypress + Jest test suite for sitter dashboard",
+      "enhanced": true
+    },
+    {
+      "name": "PythonBot",
+      "role": "Creates backend services and automation scripts",
+      "triggers": [
+        "scripts/",
+        "jobs/",
+        "backend/"
+      ],
+      "prompt": "PythonBot, generate verification uploader, Stripe webhook, and scheduled backup",
+      "enhanced": true
+    }
+  ]
+}
