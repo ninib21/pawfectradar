@@ -234,8 +234,8 @@ jobs:
       - name: 📦 Push Quantum Docker Image
         if: github.ref == 'refs/heads/main'
         env:
-          QUANTUM_DOCKER_PASSWORD: ${{ secrets.QUANTUM_DOCKER_PASSWORD || '' }}
-          QUANTUM_DOCKER_USERNAME: ${{ secrets.QUANTUM_DOCKER_USERNAME || '' }}
+          QUANTUM_DOCKER_PASSWORD: ${{ secrets.QUANTUM_DOCKER_PASSWORD }}
+          QUANTUM_DOCKER_USERNAME: ${{ secrets.QUANTUM_DOCKER_USERNAME }}
         run: |
           if [ -n "$QUANTUM_DOCKER_PASSWORD" ] && [ -n "$QUANTUM_DOCKER_USERNAME" ]; then
             echo "$QUANTUM_DOCKER_PASSWORD" | docker login -u "$QUANTUM_DOCKER_USERNAME" --password-stdin
@@ -260,11 +260,11 @@ jobs:
 
       - name: 🔐 Setup Quantum Secrets
         env:
-          QUANTUM_ENV: ${{ secrets.QUANTUM_ENV || '' }}
-          QUANTUM_SSL_CERT: ${{ secrets.QUANTUM_SSL_CERT || '' }}
-          QUANTUM_SSL_KEY: ${{ secrets.QUANTUM_SSL_KEY || '' }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}
-          AI_MODEL_PATH: ${{ secrets.AI_MODEL_PATH || '' }}
+          QUANTUM_ENV: ${{ secrets.QUANTUM_ENV }}
+          QUANTUM_SSL_CERT: ${{ secrets.QUANTUM_SSL_CERT }}
+          QUANTUM_SSL_KEY: ${{ secrets.QUANTUM_SSL_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_MODEL_PATH: ${{ secrets.AI_MODEL_PATH }}
         run: |
           if [ -n "$QUANTUM_ENV" ]; then
             echo "$QUANTUM_ENV" > deploy/quantum.env
@@ -377,8 +377,8 @@ jobs:
 
       - name: 🔐 Setup AI Secrets
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}
-          AI_MODEL_PATH: ${{ secrets.AI_MODEL_PATH || '' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_MODEL_PATH: ${{ secrets.AI_MODEL_PATH }}
         run: |
           cd ai/
           if [ -n "$OPENAI_API_KEY" ]; then
