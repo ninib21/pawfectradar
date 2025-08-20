@@ -6,7 +6,6 @@ export interface CreatePaymentDto {
   amount: number;
   currency: string;
   paymentMethod: 'CREDIT_CARD' | 'DEBIT_CARD' | 'PAYPAL' | 'APPLE_PAY' | 'GOOGLE_PAY';
-  description?: string;
 }
 
 export interface UpdatePaymentDto {
