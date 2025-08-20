@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "pawfectradar-mobile",
+    "slug": "pawfectradar-mobile",
+    "version": "1.0.0",
+    "description": "Quantum-grade React Native mobile app for PawfectRadar",
+    "sdkVersion": "50.0.0",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "android": {
+      "package": "com.pawfectradar.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "83f41325-80ab-464c-9906-5bb936798de6"
+      }
+    }
+  }
+}

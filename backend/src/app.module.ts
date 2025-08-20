@@ -188,12 +188,10 @@ import { MetricsModule } from './metrics/metrics.module';
       {
         ttl: 60000, // 1 minute
         limit: 100, // 100 requests per minute
-        quantumOptimized: true
       },
       {
         ttl: 3600000, // 1 hour
         limit: 1000, // 1000 requests per hour
-        quantumOptimized: true
       }
     ]),
 
@@ -210,12 +208,10 @@ import { MetricsModule } from './metrics/metrics.module';
         port: parseInt(process.env.QUANTUM_REDIS_PORT),
         password: process.env.QUANTUM_REDIS_PASSWORD,
         tls: process.env.NODE_ENV === 'production' ? {} : undefined,
-        quantumOptimized: true
       },
       defaultJobOptions: {
         removeOnComplete: 100,
         removeOnFail: 50,
-        quantumEncrypted: true
       }
     }),
 

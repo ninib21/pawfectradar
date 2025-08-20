@@ -75,7 +75,7 @@ export default function LoginScreen() {
       }
     } catch (error) {
       console.error('Biometric login error:', error);
-      trackUserAction('biometric_login_error', { error: error.message });
+      trackUserAction('biometric_login_error', { error: (error as any)?.message || 'Unknown error' });
     } finally {
       setIsAuthenticating(false);
     }
@@ -110,7 +110,7 @@ export default function LoginScreen() {
     } catch (error) {
       console.error('Email login error:', error);
       setError('Login failed. Please try again.');
-      trackUserAction('email_login_error', { error: error.message });
+      trackUserAction('email_login_error', { error: (error as any)?.message || 'Unknown error' });
     } finally {
       setIsAuthenticating(false);
       setLoading(false);
@@ -143,7 +143,7 @@ export default function LoginScreen() {
     } catch (error) {
       console.error('Google login error:', error);
       setError('Google login failed. Please try again.');
-      trackUserAction('google_login_error', { error: error.message });
+      trackUserAction('google_login_error', { error: (error as any)?.message || 'Unknown error' });
     } finally {
       setIsAuthenticating(false);
     }
@@ -172,15 +172,15 @@ export default function LoginScreen() {
         </LinearGradient>
 
         <View style={styles.content}>
-          <QuantumCard title="🔐 Quantum Authentication" secure={true}>
+          <QuantumCard title="🔐 Quantum Authentication">
             {isBiometricAvailable && (
               <View style={styles.biometricSection}>
                 <QuantumButton
                   title="🔐 Biometric Login"
                   onPress={handleBiometricLogin}
-                  variant="quantum"
-                  size="lg"
-                  biometric={true}
+                  variant="primary"
+                  size="large"
+
                   loading={isAuthenticating}
                 />
                 <Text style={styles.orText}>or</Text>
@@ -200,7 +200,6 @@ export default function LoginScreen() {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     error={errors.email?.message}
-                    quantumEncrypted={true}
                   />
                 )}
               />
@@ -216,8 +215,6 @@ export default function LoginScreen() {
                     onBlur={onBlur}
                     secureTextEntry={!showPassword}
                     error={errors.password?.message}
-                    quantumEncrypted={true}
-                    biometric={true}
                   />
                 )}
               />
@@ -226,10 +223,10 @@ export default function LoginScreen() {
                 title="🔐 Quantum Login"
                 onPress={handleSubmit(handleEmailLogin)}
                 variant="primary"
-                size="lg"
+                size="large"
                 disabled={!isValid || isAuthenticating}
                 loading={isAuthenticating}
-                quantumToken={true}
+
               />
             </View>
 
@@ -240,7 +237,7 @@ export default function LoginScreen() {
                 title="📱 Continue with Google"
                 onPress={handleGoogleLogin}
                 variant="secondary"
-                size="md"
+                size="medium"
                 loading={isAuthenticating}
               />
             </View>

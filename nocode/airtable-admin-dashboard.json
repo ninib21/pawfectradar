@@ -1,0 +1,471 @@
+{
+  "name": "PawfectSitters Admin Dashboard",
+  "description": "Low-code admin dashboard for managing pet sitting operations",
+  "version": "1.0.0",
+  "base": {
+    "id": "appXXXXXXXXXXXXXX",
+    "name": "PawfectSitters Admin",
+    "description": "Centralized admin dashboard for pet sitting operations"
+  },
+  "tables": [
+    {
+      "name": "Users",
+      "description": "All registered users (owners and sitters)",
+      "fields": [
+        {
+          "name": "User ID",
+          "type": "singleLineText",
+          "options": {
+            "unique": true
+          }
+        },
+        {
+          "name": "Email",
+          "type": "email",
+          "options": {
+            "unique": true
+          }
+        },
+        {
+          "name": "First Name",
+          "type": "singleLineText"
+        },
+        {
+          "name": "Last Name",
+          "type": "singleLineText"
+        },
+        {
+          "name": "Role",
+          "type": "singleSelect",
+          "options": {
+            "choices": [
+              { "name": "Owner", "color": "blue" },
+              { "name": "Sitter", "color": "green" },
+              { "name": "Admin", "color": "red" }
+            ]
+          }
+        },
+        {
+          "name": "Status",
+          "type": "singleSelect",
+          "options": {
+            "choices": [
+              { "name": "Active", "color": "green" },
+              { "name": "Pending", "color": "yellow" },
+              { "name": "Suspended", "color": "red" },
+              { "name": "Inactive", "color": "gray" }
+            ]
+          }
+        },
+        {
+          "name": "Verification Status",
+          "type": "singleSelect",
+          "options": {
+            "choices": [
+              { "name": "Verified", "color": "green" },
+              { "name": "Pending", "color": "yellow" },
+              { "name": "Rejected", "color": "red" }
+            ]
+          }
+        },
+        {
+          "name": "Registration Date",
+          "type": "dateTime"
+        },
+        {
+          "name": "Last Login",
+          "type": "dateTime"
+        },
+        {
+          "name": "Profile Picture",
+          "type": "multipleAttachments"
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "description": "All booking records",
+      "fields": [
+        {
+          "name": "Booking ID",
+          "type": "singleLineText",
+          "options": {
+            "unique": true
+          }
+        },
+        {
+          "name": "Owner",
+          "type": "singleRecordLink",
+          "options": {
+            "linkedTableId": "Users"
+          }
+        },
+        {
+          "name": "Sitter",
+          "type": "singleRecordLink",
+          "options": {
+            "linkedTableId": "Users"
+          }
+        },
+        {
+          "name": "Pets",
+          "type": "multipleRecordLinks",
+          "options": {
+            "linkedTableId": "Pets"
+          }
+        },
+        {
+          "name": "Start Date",
+          "type": "dateTime"
+        },
+        {
+          "name": "End Date",
+          "type": "dateTime"
+        },
+        {
+          "name": "Status",
+          "type": "singleSelect",
+          "options": {
+            "choices": [
+              { "name": "Pending", "color": "yellow" },
+              { "name": "Confirmed", "color": "blue" },
+              { "name": "In Progress", "color": "green" },
+              { "name": "Completed", "color": "gray" },
+              { "name": "Cancelled", "color": "red" }
+            ]
+          }
+        },
+        {
+          "name": "Total Amount",
+          "type": "currency",
+          "options": {
+            "currency": "USD"
+          }
+        },
+        {
+          "name": "Payment Status",
+          "type": "singleSelect",
+          "options": {
+            "choices": [
+              { "name": "Pending", "color": "yellow" },
+              { "name": "Paid", "color": "green" },
+              { "name": "Failed", "color": "red" },
+              { "name": "Refunded", "color": "orange" }
+            ]
+          }
+        },
+        {
+          "name": "Location",
+          "type": "singleLineText"
+        },
+        {
+          "name": "Special Instructions",
+          "type": "longText"
+        }
+      ]
+    },
+    {
+      "name": "Pets",
+      "description": "Pet profiles",
+      "fields": [
+        {
+          "name": "Pet ID",
+          "type": "singleLineText",
+          "options": {
+            "unique": true
+          }
+        },
+        {
+          "name": "Owner",
+          "type": "singleRecordLink",
+          "options": {
+            "linkedTableId": "Users"
+          }
+        },
+        {
+          "name": "Name",
+          "type": "singleLineText"
+        },
+        {
+          "name": "Type",
+          "type": "singleSelect",
+          "options": {
+            "choices": [
+              { "name": "Dog", "color": "blue" },
+              { "name": "Cat", "color": "orange" },
+              { "name": "Bird", "color": "yellow" },
+              { "name": "Fish", "color": "cyan" },
+              { "name": "Other", "color": "gray" }
+            ]
+          }
+        },
+        {
+          "name": "Breed",
+          "type": "singleLineText"
+        },
+        {
+          "name": "Age",
+          "type": "number",
+          "options": {
+            "precision": 0
+          }
+        },
+        {
+          "name": "Weight",
+          "type": "number",
+          "options": {
+            "precision": 1
+          }
+        },
+        {
+          "name": "Special Needs",
+          "type": "longText"
+        },
+        {
+          "name": "Photos",
+          "type": "multipleAttachments"
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "description": "Payment transactions",
+      "fields": [
+        {
+          "name": "Payment ID",
+          "type": "singleLineText",
+          "options": {
+            "unique": true
+          }
+        },
+        {
+          "name": "Booking",
+          "type": "singleRecordLink",
+          "options": {
+            "linkedTableId": "Bookings"
+          }
+        },
+        {
+          "name": "Amount",
+          "type": "currency",
+          "options": {
+            "currency": "USD"
+          }
+        },
+        {
+          "name": "Status",
+          "type": "singleSelect",
+          "options": {
+            "choices": [
+              { "name": "Pending", "color": "yellow" },
+              { "name": "Completed", "color": "green" },
+              { "name": "Failed", "color": "red" },
+              { "name": "Refunded", "color": "orange" }
+            ]
+          }
+        },
+        {
+          "name": "Payment Method",
+          "type": "singleSelect",
+          "options": {
+            "choices": [
+              { "name": "Credit Card", "color": "blue" },
+              { "name": "Debit Card", "color": "green" },
+              { "name": "PayPal", "color": "cyan" },
+              { "name": "Apple Pay", "color": "gray" },
+              { "name": "Google Pay", "color": "red" }
+            ]
+          }
+        },
+        {
+          "name": "Transaction Date",
+          "type": "dateTime"
+        },
+        {
+          "name": "Stripe Payment Intent ID",
+          "type": "singleLineText"
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "description": "User reviews and ratings",
+      "fields": [
+        {
+          "name": "Review ID",
+          "type": "singleLineText",
+          "options": {
+            "unique": true
+          }
+        },
+        {
+          "name": "Booking",
+          "type": "singleRecordLink",
+          "options": {
+            "linkedTableId": "Bookings"
+          }
+        },
+        {
+          "name": "Reviewer",
+          "type": "singleRecordLink",
+          "options": {
+            "linkedTableId": "Users"
+          }
+        },
+        {
+          "name": "Reviewed User",
+          "type": "singleRecordLink",
+          "options": {
+            "linkedTableId": "Users"
+          }
+        },
+        {
+          "name": "Rating",
+          "type": "number",
+          "options": {
+            "precision": 1,
+            "min": 1,
+            "max": 5
+          }
+        },
+        {
+          "name": "Comment",
+          "type": "longText"
+        },
+        {
+          "name": "Review Date",
+          "type": "dateTime"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "name": "Dashboard Overview",
+      "type": "grid",
+      "description": "Main admin dashboard with key metrics",
+      "filters": [],
+      "sort": [
+        {
+          "field": "Registration Date",
+          "direction": "desc"
+        }
+      ]
+    },
+    {
+      "name": "Active Bookings",
+      "type": "grid",
+      "description": "Currently active and pending bookings",
+      "filters": [
+        {
+          "field": "Status",
+          "operator": "is",
+          "values": ["Pending", "Confirmed", "In Progress"]
+        }
+      ],
+      "sort": [
+        {
+          "field": "Start Date",
+          "direction": "asc"
+        }
+      ]
+    },
+    {
+      "name": "Payment Issues",
+      "type": "grid",
+      "description": "Failed or pending payments",
+      "filters": [
+        {
+          "field": "Status",
+          "operator": "is",
+          "values": ["Pending", "Failed"]
+        }
+      ],
+      "sort": [
+        {
+          "field": "Transaction Date",
+          "direction": "desc"
+        }
+      ]
+    },
+    {
+      "name": "User Verification",
+      "type": "grid",
+      "description": "Users pending verification",
+      "filters": [
+        {
+          "field": "Verification Status",
+          "operator": "is",
+          "values": ["Pending"]
+        }
+      ],
+      "sort": [
+        {
+          "field": "Registration Date",
+          "direction": "asc"
+        }
+      ]
+    }
+  ],
+  "automations": [
+    {
+      "name": "New User Welcome",
+      "trigger": {
+        "type": "recordCreated",
+        "table": "Users"
+      },
+      "actions": [
+        {
+          "type": "sendEmail",
+          "template": "welcome_email",
+          "recipient": "{{Email}}",
+          "subject": "Welcome to PawfectSitters!"
+        }
+      ]
+    },
+    {
+      "name": "Booking Confirmation",
+      "trigger": {
+        "type": "recordUpdated",
+        "table": "Bookings",
+        "conditions": [
+          {
+            "field": "Status",
+            "operator": "is",
+            "value": "Confirmed"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "type": "sendEmail",
+          "template": "booking_confirmation",
+          "recipient": "{{Owner.Email}}",
+          "subject": "Your booking has been confirmed!"
+        }
+      ]
+    },
+    {
+      "name": "Payment Success",
+      "trigger": {
+        "type": "recordUpdated",
+        "table": "Payments",
+        "conditions": [
+          {
+            "field": "Status",
+            "operator": "is",
+            "value": "Completed"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "type": "sendEmail",
+          "template": "payment_receipt",
+          "recipient": "{{Booking.Owner.Email}}",
+          "subject": "Payment received - Booking confirmed"
+        }
+      ]
+    }
+  ]
+}

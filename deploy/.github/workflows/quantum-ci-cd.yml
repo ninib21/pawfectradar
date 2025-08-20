@@ -2,6 +2,7 @@
 # 🔒 MILITARY-GRADE SECURITY + QUANTUM-ENHANCED AUTOMATION
 # 📈 QUANTUM-INFINITE SCALABILITY
 # 🚀 QUANTUM-OPTIMIZED PERFORMANCE
+# 🧠 AI-ENHANCED INTELLIGENCE
 
 name: Quantum CI/CD Pipeline
 
@@ -18,6 +19,8 @@ env:
   QUANTUM_ENCRYPTION: post-quantum
   QUANTUM_MONITORING: enabled
   QUANTUM_THREAT_DETECTION: enabled
+  AI_MODEL_VERSION: v1.0.0
+  AI_ENDPOINT_URL: https://ai.quantum-pawfectsitters.com
 
 jobs:
   # 🔒 QUANTUM SECURITY SCAN
@@ -52,11 +55,73 @@ jobs:
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
 
+  # 🧠 AI MODEL VALIDATION
+  ai-model-validation:
+    name: 🧠 AI Model Validation
+    runs-on: ubuntu-latest
+    needs: quantum-security-scan
+    steps:
+      - name: 🔍 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install AI Dependencies
+        run: |
+          cd ai/
+          npm install
+          pip install tensorflow openai langchain natural
+
+      - name: 🧪 Validate AI Models
+        run: |
+          cd ai/
+          npm run test
+          python -m pytest tests/test_ai_models.py -v
+
+      - name: 📊 AI Model Performance Test
+        run: |
+          cd ai/
+          npm run test:performance
+          python -m pytest tests/test_performance.py -v
+
+      - name: 🔒 AI Security Validation
+        run: |
+          cd ai/
+          npm run test:security
+          python -m pytest tests/test_security.py -v
+
+      - name: 📈 AI Model Accuracy Test
+        run: |
+          cd ai/
+          npm run test:accuracy
+          python -m pytest tests/test_accuracy.py -v
+
+      - name: 📦 Package AI Models
+        run: |
+          cd ai/
+          npm run build
+          tar -czf ai-models-${{ github.sha }}.tar.gz models/ dist/
+
+      - name: 📤 Upload AI Models
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-models-${{ github.sha }}
+          path: ai/ai-models-${{ github.sha }}.tar.gz
+
   # 🧪 QUANTUM TESTING
   quantum-testing:
     name: 🧪 Quantum Testing Suite
     runs-on: ubuntu-latest
-    needs: quantum-security-scan
+    needs: [quantum-security-scan, ai-model-validation]
     strategy:
       matrix:
         node-version: [18.x, 20.x]
@@ -87,6 +152,14 @@ jobs:
           npm run test:quantum:integration
           npm run test:quantum:api
 
+      - name: 🧠 Run AI Integration Tests
+        run: |
+          npm run test:ai:integration
+          npm run test:ai:recommendations
+          npm run test:ai:trust-score
+          npm run test:ai:sentiment-analysis
+          npm run test:ai:smart-booking
+
       - name: 🚀 Run Quantum Performance Tests
         run: |
           npm run test:quantum:performance
@@ -113,7 +186,7 @@ jobs:
     needs: quantum-testing
     strategy:
       matrix:
-        service: [api-gateway, auth-service, user-service, booking-service, payment-service, messaging-service, analytics-service]
+        service: [api-gateway, auth-service, user-service, booking-service, payment-service, messaging-service, analytics-service, ai-service]
 
     steps:
       - name: 🔍 Checkout Code
@@ -128,6 +201,13 @@ jobs:
       - name: 📦 Install Quantum Dependencies
         run: npm ci --quantum-optimized
 
+      - name: 📥 Download AI Models
+        if: matrix.service == 'ai-service'
+        uses: actions/download-artifact@v4
+        with:
+          name: ai-models-${{ github.sha }}
+          path: ai/
+
       - name: 🔧 Build Quantum ${{ matrix.service }}
         run: |
           npm run build:quantum:${{ matrix.service }}
@@ -141,6 +221,7 @@ jobs:
             --tag quantum-${{ matrix.service }}:latest \
             --build-arg QUANTUM_SECURITY_LEVEL=military-grade \
             --build-arg QUANTUM_ENCRYPTION=post-quantum \
+            --build-arg AI_MODEL_VERSION=${{ env.AI_MODEL_VERSION }} \
             ./quantum-${{ matrix.service }}
 
       - name: 🔒 Quantum Security Scan
@@ -171,9 +252,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: quantum-build
     if: github.ref == 'refs/heads/main'
-    environment:
-      name: quantum-production
-      url: https://api.quantum-pawfectsitters.com
+    environment: quantum-production
 
     steps:
       - name: 🔍 Checkout Code
@@ -184,6 +263,8 @@ jobs:
           QUANTUM_ENV: ${{ secrets.QUANTUM_ENV || '' }}
           QUANTUM_SSL_CERT: ${{ secrets.QUANTUM_SSL_CERT || '' }}
           QUANTUM_SSL_KEY: ${{ secrets.QUANTUM_SSL_KEY || '' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}
+          AI_MODEL_PATH: ${{ secrets.AI_MODEL_PATH || '' }}
         run: |
           if [ -n "$QUANTUM_ENV" ]; then
             echo "$QUANTUM_ENV" > deploy/quantum.env
@@ -200,116 +281,83 @@ jobs:
             echo "⚠️ SSL certificates not configured - using HTTP mode"
           fi
 
-      - name: 🐳 Deploy Quantum Infrastructure
-        run: |
-          docker-compose -f deploy/docker-compose.yml \
-            --env-file deploy/quantum.env \
-            up -d --scale quantum-api-gateway=3 \
-            --scale quantum-auth-service=2 \
-            --scale quantum-user-service=2 \
-            --scale quantum-booking-service=2 \
-            --scale quantum-payment-service=2 \
-            --scale quantum-messaging-service=3 \
-            --scale quantum-analytics-service=2
+          # Setup AI environment variables
+          if [ -n "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> deploy/quantum.env
+          else
+            echo "⚠️ OPENAI_API_KEY not configured - AI features may be limited"
+          fi
 
-      - name: 🔒 Quantum Security Verification
-        run: |
-          npm run quantum:security:verify
-          npm run quantum:compliance:check
+          if [ -n "$AI_MODEL_PATH" ]; then
+            echo "AI_MODEL_PATH=$AI_MODEL_PATH" >> deploy/quantum.env
+          else
+            echo "AI_MODEL_PATH=./ai/models/" >> deploy/quantum.env
+          fi
 
-      - name: 📊 Quantum Health Check
+      - name: 🚀 Deploy Quantum Services
         run: |
-          npm run quantum:health:check
-          npm run quantum:monitoring:verify
+          docker-compose -f deploy/docker-compose.yml up -d --force-recreate
+          docker-compose -f deploy/docker-compose.yml ps
 
-      - name: 🚀 Quantum Performance Test
+      - name: 🧠 Deploy AI Service
         run: |
-          npm run quantum:performance:test
-          npm run quantum:load:test
+          docker-compose -f deploy/docker-compose.ai.yml up -d --force-recreate
+          docker-compose -f deploy/docker-compose.ai.yml ps
 
-      - name: 📈 Quantum Monitoring Setup
+      - name: 🔍 Health Check Quantum Services
         run: |
-          npm run quantum:monitoring:setup
-          npm run quantum:alerting:configure
+          ./deploy/scripts/health-check.sh
+          ./deploy/scripts/quantum-health-check.sh
 
-  # 📊 QUANTUM MONITORING
-  quantum-monitoring:
-    name: 📊 Quantum Monitoring
+      - name: 🧠 Health Check AI Service
+        run: |
+          ./deploy/scripts/ai-health-check.sh
+          curl -f ${{ env.AI_ENDPOINT_URL }}/health || exit 1
+
+      - name: 📊 Deploy Quantum Monitoring
+        run: |
+          docker-compose -f deploy/quantum-monitoring/docker-compose.yml up -d
+          docker-compose -f deploy/quantum-monitoring/docker-compose.yml ps
+
+      - name: 🔄 Quantum Blue-Green Deployment
+        if: github.event_name == 'release'
+        run: |
+          ./deploy/scripts/quantum-blue-green-deploy.sh
+          ./deploy/scripts/quantum-rollback-check.sh
+
+      - name: 📈 Quantum Performance Monitoring
+        run: |
+          ./deploy/scripts/quantum-performance-monitor.sh
+          ./deploy/scripts/quantum-metrics-collector.sh
+
+      - name: 🔒 Quantum Security Post-Deployment
+        run: |
+          ./deploy/scripts/quantum-security-post-deploy.sh
+          ./deploy/scripts/quantum-vulnerability-scan.sh
+
+      - name: 🧠 AI Model Performance Monitoring
+        run: |
+          ./deploy/scripts/ai-performance-monitor.sh
+          ./deploy/scripts/ai-model-drift-detection.sh
+
+      - name: 📊 Quantum Analytics Setup
+        run: |
+          ./deploy/scripts/quantum-analytics-setup.sh
+          ./deploy/scripts/quantum-dashboard-setup.sh
+
+      - name: 🔔 Quantum Notifications
+        if: always()
+        run: |
+          ./deploy/scripts/quantum-notification.sh ${{ job.status }}
+          ./deploy/scripts/quantum-slack-notification.sh ${{ job.status }}
+
+  # 🧠 AI SERVICE DEPLOYMENT
+  ai-service-deployment:
+    name: 🧠 AI Service Deployment
     runs-on: ubuntu-latest
     needs: quantum-deployment
     if: github.ref == 'refs/heads/main'
-
-    steps:
-      - name: 🔍 Checkout Code
-        uses: actions/checkout@v4
-
-      - name: 📊 Setup Quantum Prometheus
-        run: |
-          docker-compose -f deploy/docker-compose.yml \
-            --env-file deploy/quantum.env \
-            up -d quantum-prometheus
-
-      - name: 📈 Setup Quantum Grafana
-        run: |
-          docker-compose -f deploy/docker-compose.yml \
-            --env-file deploy/quantum.env \
-            up -d quantum-grafana
-
-      - name: 🔒 Setup Quantum Security Scanner
-        run: |
-          docker-compose -f deploy/docker-compose.yml \
-            --env-file deploy/quantum.env \
-            up -d quantum-security-scanner
-
-      - name: 📝 Setup Quantum Log Aggregator
-        run: |
-          docker-compose -f deploy/docker-compose.yml \
-            --env-file deploy/quantum.env \
-            up -d quantum-log-aggregator
-
-      - name: 🚨 Configure Quantum Alerting
-        run: |
-          npm run quantum:alerting:setup
-          npm run quantum:notification:configure
-
-  # 🔄 QUANTUM ROLLBACK
-  quantum-rollback:
-    name: 🔄 Quantum Rollback
-    runs-on: ubuntu-latest
-    if: failure() && github.ref == 'refs/heads/main'
-    needs: [quantum-deployment, quantum-monitoring]
-
-    steps:
-      - name: 🔍 Checkout Code
-        uses: actions/checkout@v4
-
-      - name: 🔄 Quantum Rollback
-        run: |
-          docker-compose -f deploy/docker-compose.yml \
-            --env-file deploy/quantum.env \
-            down
-          
-          docker-compose -f deploy/docker-compose.yml \
-            --env-file deploy/quantum.env \
-            up -d --scale quantum-api-gateway=1 \
-            --scale quantum-auth-service=1 \
-            --scale quantum-user-service=1 \
-            --scale quantum-booking-service=1 \
-            --scale quantum-payment-service=1 \
-            --scale quantum-messaging-service=1 \
-            --scale quantum-analytics-service=1
-
-      - name: 🚨 Quantum Incident Notification
-        run: |
-          npm run quantum:incident:notify
-          npm run quantum:status:update
-
-  # 📱 QUANTUM FRONTEND DEPLOYMENT
-  quantum-frontend:
-    name: 📱 Quantum Frontend Deployment
-    runs-on: ubuntu-latest
-    needs: quantum-deployment
-    if: github.ref == 'refs/heads/main'
+    environment: ai-production
 
     steps:
       - name: 🔍 Checkout Code
@@ -321,105 +369,186 @@ jobs:
           node-version: '18.x'
           cache: 'npm'
 
-      - name: 📦 Install Quantum Frontend Dependencies
-        run: |
-          cd frontend
-          npm ci --quantum-optimized
-
-      - name: 🔧 Build Quantum Frontend
-        run: |
-          cd frontend
-          npm run build:quantum
-          npm run optimize:quantum
-
-      - name: 🚀 Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        env:
-          VERCEL_TOKEN: ${{ secrets.QUANTUM_VERCEL_TOKEN || '' }}
-          VERCEL_ORG_ID: ${{ secrets.QUANTUM_VERCEL_ORG_ID || '' }}
-          VERCEL_PROJECT_ID: ${{ secrets.QUANTUM_VERCEL_PROJECT_ID || '' }}
+      - name: 📥 Download AI Models
+        uses: actions/download-artifact@v4
         with:
-          vercel-token: ${{ secrets.QUANTUM_VERCEL_TOKEN || '' }}
-          vercel-org-id: ${{ secrets.QUANTUM_VERCEL_ORG_ID || '' }}
-          vercel-project-id: ${{ secrets.QUANTUM_VERCEL_PROJECT_ID || '' }}
-          working-directory: ./frontend
-          vercel-args: '--prod'
-        continue-on-error: true
+          name: ai-models-${{ github.sha }}
+          path: ai/
 
-      - name: 📱 Deploy to Netlify
-        uses: nwtgck/actions-netlify@v2.0
+      - name: 🔐 Setup AI Secrets
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.QUANTUM_NETLIFY_TOKEN || '' }}
-          NETLIFY_SITE_ID: ${{ secrets.QUANTUM_NETLIFY_SITE_ID || '' }}
-        with:
-          publish-dir: './frontend/dist'
-          production-branch: main
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Quantum Frontend Deployment"
-        continue-on-error: true
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || '' }}
+          AI_MODEL_PATH: ${{ secrets.AI_MODEL_PATH || '' }}
+        run: |
+          cd ai/
+          if [ -n "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
+          fi
+          if [ -n "$AI_MODEL_PATH" ]; then
+            echo "AI_MODEL_PATH=$AI_MODEL_PATH" >> .env
+          fi
 
-  # 📊 QUANTUM ANALYTICS
-  quantum-analytics:
-    name: 📊 Quantum Analytics
+      - name: 🧠 Deploy AI Service
+        run: |
+          cd ai/
+          npm run deploy:production
+          docker-compose -f docker-compose.ai.yml up -d
+
+      - name: 🧪 AI Service Health Check
+        run: |
+          cd ai/
+          npm run health-check
+          curl -f ${{ env.AI_ENDPOINT_URL }}/health || exit 1
+
+      - name: 📊 AI Performance Test
+        run: |
+          cd ai/
+          npm run test:performance:production
+          npm run test:accuracy:production
+
+      - name: 🔒 AI Security Validation
+        run: |
+          cd ai/
+          npm run test:security:production
+          npm run audit:ai
+
+      - name: 📈 AI Monitoring Setup
+        run: |
+          cd ai/
+          npm run setup:monitoring
+          npm run setup:alerting
+
+      - name: 🔄 AI Model Versioning
+        run: |
+          cd ai/
+          npm run version:models
+          npm run backup:models
+
+      - name: 📊 AI Analytics Dashboard
+        run: |
+          cd ai/
+          npm run setup:dashboard
+          npm run setup:metrics
+
+  # 📊 QUANTUM MONITORING & ANALYTICS
+  quantum-monitoring:
+    name: 📊 Quantum Monitoring & Analytics
     runs-on: ubuntu-latest
-    needs: [quantum-frontend, quantum-monitoring]
+    needs: [quantum-deployment, ai-service-deployment]
     if: github.ref == 'refs/heads/main'
 
     steps:
       - name: 🔍 Checkout Code
         uses: actions/checkout@v4
 
-      - name: 📊 Setup Quantum Analytics
+      - name: 📊 Setup Quantum Monitoring
         run: |
-          npm run quantum:analytics:setup
-          npm run quantum:metrics:configure
+          docker-compose -f deploy/quantum-monitoring/docker-compose.yml up -d
+          docker-compose -f deploy/quantum-monitoring/prometheus.yml up -d
 
-      - name: 📈 Quantum Performance Monitoring
+      - name: 📈 Setup Quantum Analytics
         run: |
-          npm run quantum:performance:monitor
-          npm run quantum:metrics:collect
+          ./deploy/scripts/quantum-analytics-setup.sh
+          ./deploy/scripts/quantum-dashboard-setup.sh
 
-      - name: 🔒 Quantum Security Analytics
+      - name: 🧠 Setup AI Monitoring
         run: |
-          npm run quantum:security:analytics
-          npm run quantum:threat:analysis
+          cd ai/
+          npm run setup:monitoring
+          npm run setup:alerting
 
-      - name: 📊 Quantum Business Intelligence
+      - name: 📊 Quantum Performance Baseline
         run: |
-          npm run quantum:bi:setup
-          npm run quantum:reporting:configure
+          ./deploy/scripts/quantum-performance-baseline.sh
+          ./deploy/scripts/quantum-metrics-baseline.sh
 
-  # 🔐 QUANTUM COMPLIANCE
-  quantum-compliance:
-    name: 🔐 Quantum Compliance
+      - name: 🧠 AI Performance Baseline
+        run: |
+          cd ai/
+          npm run baseline:performance
+          npm run baseline:accuracy
+
+      - name: 🔔 Quantum Alerting Setup
+        run: |
+          ./deploy/scripts/quantum-alerting-setup.sh
+          ./deploy/scripts/quantum-notification-setup.sh
+
+      - name: 📊 Quantum Dashboard Verification
+        run: |
+          ./deploy/scripts/quantum-dashboard-verify.sh
+          ./deploy/scripts/quantum-metrics-verify.sh
+
+  # 🔄 QUANTUM ROLLBACK
+  quantum-rollback:
+    name: 🔄 Quantum Rollback
     runs-on: ubuntu-latest
-    needs: quantum-analytics
-    if: github.ref == 'refs/heads/main'
+    needs: [quantum-deployment, ai-service-deployment]
+    if: failure() && github.ref == 'refs/heads/main'
 
     steps:
       - name: 🔍 Checkout Code
         uses: actions/checkout@v4
 
-      - name: 🔐 GDPR Compliance Check
-        run: npm run quantum:compliance:gdpr
-
-      - name: 🔐 CCPA Compliance Check
-        run: npm run quantum:compliance:ccpa
-
-      - name: 🔐 PCI DSS Compliance Check
-        run: npm run quantum:compliance:pcidss
-
-      - name: 🔐 SOC2 Compliance Check
-        run: npm run quantum:compliance:soc2
-
-      - name: 📋 Quantum Compliance Report
+      - name: 🔄 Quantum Service Rollback
         run: |
-          npm run quantum:compliance:report
-          npm run quantum:audit:generate
+          ./deploy/scripts/quantum-rollback.sh
+          ./deploy/scripts/quantum-health-check.sh
 
-      - name: 📤 Upload Quantum Compliance Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: quantum-compliance-report
-          path: compliance-reports/
-          retention-days: 365
+      - name: 🧠 AI Service Rollback
+        run: |
+          cd ai/
+          npm run rollback
+          npm run health-check
+
+      - name: 🔔 Quantum Rollback Notification
+        run: |
+          ./deploy/scripts/quantum-rollback-notification.sh
+          ./deploy/scripts/quantum-slack-rollback.sh
+
+  # 📊 QUANTUM POST-DEPLOYMENT
+  quantum-post-deployment:
+    name: 📊 Quantum Post-Deployment
+    runs-on: ubuntu-latest
+    needs: [quantum-deployment, ai-service-deployment, quantum-monitoring]
+    if: success() && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 🔍 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 📊 Quantum Performance Analysis
+        run: |
+          ./deploy/scripts/quantum-performance-analysis.sh
+          ./deploy/scripts/quantum-metrics-analysis.sh
+
+      - name: 🧠 AI Performance Analysis
+        run: |
+          cd ai/
+          npm run analyze:performance
+          npm run analyze:accuracy
+
+      - name: 🔒 Quantum Security Post-Deployment
+        run: |
+          ./deploy/scripts/quantum-security-post-deploy.sh
+          ./deploy/scripts/quantum-vulnerability-scan.sh
+
+      - name: 📈 Quantum Analytics Report
+        run: |
+          ./deploy/scripts/quantum-analytics-report.sh
+          ./deploy/scripts/quantum-metrics-report.sh
+
+      - name: 🧠 AI Analytics Report
+        run: |
+          cd ai/
+          npm run report:analytics
+          npm run report:performance
+
+      - name: 🔔 Quantum Success Notification
+        run: |
+          ./deploy/scripts/quantum-success-notification.sh
+          ./deploy/scripts/quantum-slack-success.sh
+
+      - name: 📊 Quantum Documentation Update
+        run: |
+          ./deploy/scripts/quantum-docs-update.sh
+          ./deploy/scripts/quantum-changelog-update.sh

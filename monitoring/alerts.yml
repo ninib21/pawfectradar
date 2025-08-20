@@ -1,0 +1,221 @@
+groups:
+           - name: pawfectradar-backend
+    rules:
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High CPU usage on backend service"
+          description: "Backend service is using {{ $value }}% CPU for more than 5 minutes"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (process_resident_memory_bytes / container_memory_usage_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High memory usage on backend service"
+          description: "Backend service is using {{ $value }}% memory"
+
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "High error rate on backend service"
+          description: "Error rate is {{ $value }}% over the last 5 minutes"
+
+      # Service Down
+      - alert: BackendServiceDown
+                       expr: up{job="pawfectradar-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Backend service is down"
+          description: "Backend service has been down for more than 1 minute"
+
+      # High Response Time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "High response time on backend service"
+          description: "95th percentile response time is {{ $value }}s"
+
+           - name: pawfectradar-database
+    rules:
+      # Database Connection Issues
+      - alert: DatabaseConnectionIssues
+        expr: pg_stat_database_numbackends > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High number of database connections"
+          description: "Database has {{ $value }} active connections"
+
+      # Database Slow Queries
+      - alert: DatabaseSlowQueries
+        expr: rate(pg_stat_activity_max_tx_duration[5m]) > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Average query duration is {{ $value }}s"
+
+      # Database Disk Space
+      - alert: DatabaseDiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/var/lib/postgresql/data"} / node_filesystem_size_bytes{mountpoint="/var/lib/postgresql/data"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Database disk space is low"
+          description: "Only {{ $value }}% disk space remaining"
+
+           - name: pawfectradar-redis
+    rules:
+      # Redis Memory Usage
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis is using {{ $value }}% of available memory"
+
+      # Redis Connection Issues
+      - alert: RedisConnectionIssues
+        expr: redis_connected_clients > 1000
+        for: 2m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "High number of Redis connections"
+          description: "Redis has {{ $value }} connected clients"
+
+           - name: pawfectradar-business
+    rules:
+      # Payment Processing Issues
+      - alert: PaymentProcessingIssues
+        expr: rate(payment_processing_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: payments
+        annotations:
+          summary: "Payment processing errors detected"
+          description: "{{ $value }} payment errors per second"
+
+      # Booking System Issues
+      - alert: BookingSystemIssues
+        expr: rate(booking_creation_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: bookings
+        annotations:
+          summary: "Booking creation errors detected"
+          description: "{{ $value }} booking errors per second"
+
+      # User Registration Issues
+      - alert: UserRegistrationIssues
+        expr: rate(user_registration_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: auth
+        annotations:
+          summary: "User registration errors detected"
+          description: "{{ $value }} registration errors per second"
+
+           - name: pawfectradar-infrastructure
+    rules:
+      # Disk Space Low
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "Low disk space on {{ $labels.mountpoint }}"
+          description: "Only {{ $value }}% disk space remaining"
+
+      # High Load Average
+      - alert: HighLoadAverage
+        expr: node_load1 > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High load average on {{ $labels.instance }}"
+          description: "Load average is {{ $value }}"
+
+      # Network Issues
+      - alert: NetworkIssues
+        expr: rate(node_network_receive_drop_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "Network packet drops detected"
+          description: "{{ $value }} packets dropped per second"
+
+           - name: pawfectradar-availability
+    rules:
+      # Service Availability
+      - alert: ServiceAvailabilityLow
+        expr: (up{job="pawfectsitters-backend"} / count(up{job="pawfectsitters-backend"})) * 100 < 95
+        for: 5m
+        labels:
+          severity: critical
+          service: availability
+        annotations:
+          summary: "Service availability is below 95%"
+          description: "Service availability is {{ $value }}%"
+
+      # API Response Time SLO
+      - alert: APISLOViolation
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: critical
+          service: slo
+        annotations:
+          summary: "API SLO violation - 95th percentile > 1s"
+          description: "95th percentile response time is {{ $value }}s"
+
+      # Error Rate SLO
+      - alert: ErrorRateSLOViolation
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 1
+        for: 2m
+        labels:
+          severity: critical
+          service: slo
+        annotations:
+          summary: "Error rate SLO violation - > 1%"
+          description: "Error rate is {{ $value }}%"

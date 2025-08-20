@@ -128,7 +128,7 @@ export default function OwnerDashboardScreen() {
 
       {/* Quantum Stats */}
       <View style={styles.statsContainer}>
-        <QuantumCard title="📊 Quantum Statistics" secure={true}>
+        <QuantumCard title="📊 Quantum Statistics">
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Ionicons name="paw" size={24} color="#00D4AA" />
@@ -156,7 +156,7 @@ export default function OwnerDashboardScreen() {
 
       {/* My Pets Section */}
       <View style={styles.section}>
-        <QuantumCard title="🐕 My Pets" secure={true}>
+        <QuantumCard title="🐕 My Pets">
           {state.pets.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {state.pets.map((pet) => (
@@ -187,15 +187,15 @@ export default function OwnerDashboardScreen() {
           <QuantumButton
             title="➕ Add New Pet"
             onPress={handleAddPet}
-            variant="success"
-            size="md"
+            variant="primary"
+            size="medium"
           />
         </QuantumCard>
       </View>
 
       {/* Recent Bookings */}
       <View style={styles.section}>
-        <QuantumCard title="📅 Recent Bookings" secure={true}>
+        <QuantumCard title="📅 Recent Bookings">
           {state.bookings.length > 0 ? (
             <View>
               {state.bookings.slice(0, 3).map((booking) => (
@@ -234,14 +234,14 @@ export default function OwnerDashboardScreen() {
             title="📅 View All Bookings"
             onPress={handleViewBookings}
             variant="secondary"
-            size="md"
+            size="medium"
           />
         </QuantumCard>
       </View>
 
       {/* Quick Actions */}
       <View style={styles.section}>
-        <QuantumCard title="⚡ Quick Actions" secure={true}>
+        <QuantumCard title="⚡ Quick Actions">
           <View style={styles.actionsGrid}>
             <TouchableOpacity
               style={styles.actionButton}

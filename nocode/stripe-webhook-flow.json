@@ -1,0 +1,356 @@
+{
+  "name": "PawfectSitters Stripe Webhook Flow",
+  "description": "Automated payment processing and email notifications via Stripe webhooks",
+  "version": "1.0.0",
+  "platform": "Zapier",
+  "triggers": [
+    {
+      "name": "Stripe Payment Success",
+      "type": "webhook",
+      "service": "stripe",
+      "event": "payment_intent.succeeded",
+      "description": "Triggered when a payment is successfully completed",
+      "webhook_url": "https://hooks.zapier.com/hooks/catch/1234567/abcdefg/",
+      "authentication": {
+        "type": "bearer_token",
+        "token": "sk_test_...",
+        "endpoint_secret": "whsec_..."
+      },
+      "filters": [
+        {
+          "field": "metadata.booking_id",
+          "operator": "exists",
+          "value": true
+        }
+      ]
+    },
+    {
+      "name": "Stripe Payment Failed",
+      "type": "webhook",
+      "service": "stripe",
+      "event": "payment_intent.payment_failed",
+      "description": "Triggered when a payment fails",
+      "webhook_url": "https://hooks.zapier.com/hooks/catch/1234567/hijklmn/",
+      "authentication": {
+        "type": "bearer_token",
+        "token": "sk_test_...",
+        "endpoint_secret": "whsec_..."
+      }
+    },
+    {
+      "name": "Stripe Refund Processed",
+      "type": "webhook",
+      "service": "stripe",
+      "event": "charge.refunded",
+      "description": "Triggered when a refund is processed",
+      "webhook_url": "https://hooks.zapier.com/hooks/catch/1234567/opqrstu/",
+      "authentication": {
+        "type": "bearer_token",
+        "token": "sk_test_...",
+        "endpoint_secret": "whsec_..."
+      }
+    }
+  ],
+  "actions": [
+    {
+      "name": "Update Booking Status",
+      "type": "http_request",
+      "service": "webhook",
+      "description": "Update booking status in database",
+      "method": "POST",
+      "url": "https://api.pawfectsitters.com/webhooks/booking/update",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer {{api_token}}",
+        "X-Webhook-Signature": "{{webhook_signature}}"
+      },
+      "body": {
+        "booking_id": "{{trigger.metadata.booking_id}}",
+        "payment_status": "{{trigger.status}}",
+        "payment_intent_id": "{{trigger.id}}",
+        "amount": "{{trigger.amount}}",
+        "currency": "{{trigger.currency}}",
+        "timestamp": "{{trigger.created}}"
+      },
+      "conditions": [
+        {
+          "field": "{{trigger.status}}",
+          "operator": "equals",
+          "value": "succeeded"
+        }
+      ]
+    },
+    {
+      "name": "Send Payment Success Email",
+      "type": "email",
+      "service": "gmail",
+      "description": "Send payment confirmation email to customer",
+      "template": "payment_success",
+      "to": "{{customer_email}}",
+      "subject": "Payment Confirmed - Your PawfectSitters Booking",
+      "body": {
+        "html": true,
+        "content": "{{payment_success_template}}"
+      },
+      "attachments": [
+        {
+          "type": "receipt_pdf",
+          "source": "stripe_receipt",
+          "filename": "receipt-{{booking_id}}.pdf"
+        }
+      ],
+      "conditions": [
+        {
+          "field": "{{trigger.status}}",
+          "operator": "equals",
+          "value": "succeeded"
+        }
+      ]
+    },
+    {
+      "name": "Send Payment Failed Email",
+      "type": "email",
+      "service": "gmail",
+      "description": "Send payment failure notification to customer",
+      "template": "payment_failed",
+      "to": "{{customer_email}}",
+      "subject": "Payment Failed - Action Required",
+      "body": {
+        "html": true,
+        "content": "{{payment_failed_template}}"
+      },
+      "conditions": [
+        {
+          "field": "{{trigger.status}}",
+          "operator": "equals",
+          "value": "payment_failed"
+        }
+      ]
+    },
+    {
+      "name": "Notify Sitter",
+      "type": "email",
+      "service": "gmail",
+      "description": "Notify sitter about payment confirmation",
+      "template": "sitter_notification",
+      "to": "{{sitter_email}}",
+      "subject": "Payment Received - Booking Confirmed",
+      "body": {
+        "html": true,
+        "content": "{{sitter_notification_template}}"
+      },
+      "conditions": [
+        {
+          "field": "{{trigger.status}}",
+          "operator": "equals",
+          "value": "succeeded"
+        }
+      ]
+    },
+    {
+      "name": "Create Invoice Record",
+      "type": "database",
+      "service": "airtable",
+      "description": "Create invoice record in Airtable",
+      "base_id": "appXXXXXXXXXXXXXX",
+      "table": "Invoices",
+      "fields": {
+        "Invoice ID": "inv_{{trigger.id}}",
+        "Booking ID": "{{trigger.metadata.booking_id}}",
+        "Customer": "{{customer_email}}",
+        "Amount": "{{trigger.amount}}",
+        "Currency": "{{trigger.currency}}",
+        "Status": "{{trigger.status}}",
+        "Payment Method": "{{trigger.payment_method}}",
+        "Transaction Date": "{{trigger.created}}",
+        "Stripe Payment Intent ID": "{{trigger.id}}"
+      },
+      "conditions": [
+        {
+          "field": "{{trigger.status}}",
+          "operator": "equals",
+          "value": "succeeded"
+        }
+      ]
+    },
+    {
+      "name": "Send Admin Notification",
+      "type": "slack",
+      "service": "slack",
+      "description": "Send notification to admin channel",
+      "channel": "#pawfectsitters-admin",
+      "message": "💰 Payment received: ${{trigger.amount}} for booking {{trigger.metadata.booking_id}}",
+      "attachments": [
+        {
+          "color": "good",
+          "fields": [
+            {
+              "title": "Booking ID",
+              "value": "{{trigger.metadata.booking_id}}",
+              "short": true
+            },
+            {
+              "title": "Amount",
+              "value": "${{trigger.amount}}",
+              "short": true
+            },
+            {
+              "title": "Customer",
+              "value": "{{customer_email}}",
+              "short": true
+            },
+            {
+              "title": "Payment Method",
+              "value": "{{trigger.payment_method}}",
+              "short": true
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "field": "{{trigger.status}}",
+          "operator": "equals",
+          "value": "succeeded"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "name": "Payment Success Flow",
+      "description": "Complete flow for successful payments",
+      "trigger": "Stripe Payment Success",
+      "steps": [
+        {
+          "name": "Validate Payment",
+          "type": "condition",
+          "description": "Validate payment data",
+          "conditions": [
+            {
+              "field": "{{trigger.amount}}",
+              "operator": "greater_than",
+              "value": 0
+            },
+            {
+              "field": "{{trigger.metadata.booking_id}}",
+              "operator": "exists",
+              "value": true
+            }
+          ]
+        },
+        {
+          "name": "Update Database",
+          "type": "action",
+          "action": "Update Booking Status",
+          "description": "Update booking status in main database"
+        },
+        {
+          "name": "Send Customer Email",
+          "type": "action",
+          "action": "Send Payment Success Email",
+          "description": "Send confirmation email to customer"
+        },
+        {
+          "name": "Notify Sitter",
+          "type": "action",
+          "action": "Notify Sitter",
+          "description": "Notify sitter about payment"
+        },
+        {
+          "name": "Create Invoice",
+          "type": "action",
+          "action": "Create Invoice Record",
+          "description": "Create invoice record in Airtable"
+        },
+        {
+          "name": "Admin Notification",
+          "type": "action",
+          "action": "Send Admin Notification",
+          "description": "Notify admin team"
+        }
+      ]
+    },
+    {
+      "name": "Payment Failed Flow",
+      "description": "Flow for failed payments",
+      "trigger": "Stripe Payment Failed",
+      "steps": [
+        {
+          "name": "Update Booking Status",
+          "type": "action",
+          "action": "Update Booking Status",
+          "description": "Mark booking as payment failed"
+        },
+        {
+          "name": "Send Failure Email",
+          "type": "action",
+          "action": "Send Payment Failed Email",
+          "description": "Notify customer about payment failure"
+        },
+        {
+          "name": "Admin Alert",
+          "type": "slack",
+          "service": "slack",
+          "channel": "#pawfectsitters-alerts",
+          "message": "❌ Payment failed for booking {{trigger.metadata.booking_id}}",
+          "attachments": [
+            {
+              "color": "danger",
+              "fields": [
+                {
+                  "title": "Booking ID",
+                  "value": "{{trigger.metadata.booking_id}}",
+                  "short": true
+                },
+                {
+                  "title": "Error",
+                  "value": "{{trigger.last_payment_error.message}}",
+                  "short": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "templates": {
+    "payment_success": {
+      "subject": "Payment Confirmed - Your PawfectSitters Booking",
+      "html": true,
+      "content": "{{payment_success_html}}"
+    },
+    "payment_failed": {
+      "subject": "Payment Failed - Action Required",
+      "html": true,
+      "content": "{{payment_failed_html}}"
+    },
+    "sitter_notification": {
+      "subject": "Payment Received - Booking Confirmed",
+      "html": true,
+      "content": "{{sitter_notification_html}}"
+    }
+  },
+  "error_handling": {
+    "retry_attempts": 3,
+    "retry_delay": 300,
+    "fallback_actions": [
+      {
+        "name": "Manual Review Alert",
+        "type": "slack",
+        "channel": "#pawfectsitters-errors",
+        "message": "⚠️ Webhook processing failed - manual review required"
+      }
+    ]
+  },
+  "monitoring": {
+    "webhook_health_check": "https://api.pawfectsitters.com/webhooks/health",
+    "success_rate_threshold": 0.95,
+    "response_time_threshold": 5000,
+    "alerts": {
+      "email": "admin@pawfectsitters.com",
+      "slack": "#pawfectsitters-monitoring"
+    }
+  }
+}

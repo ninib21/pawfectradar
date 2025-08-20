@@ -1,0 +1,204 @@
+{
+  "dashboard": {
+    "id": null,
+               "title": "PawfectRadar Business Metrics",
+           "tags": ["pawfectradar", "business"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Revenue (Last 30 Days)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(payment_amount_total)",
+            "legendFormat": "Total Revenue"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "unit": "currencyUSD"
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Active Bookings",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "booking_status_total{status=\"active\"}",
+            "legendFormat": "Active"
+          },
+          {
+            "expr": "booking_status_total{status=\"pending\"}",
+            "legendFormat": "Pending"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "User Growth",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "user_registration_total",
+            "legendFormat": "Total Users"
+          },
+          {
+            "expr": "rate(user_registration_total[24h])",
+            "legendFormat": "New Users/Day"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Users",
+            "min": 0
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Booking Completion Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(booking_completed_total[7d]) / rate(booking_created_total[7d]) * 100",
+            "legendFormat": "Completion Rate %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 80},
+                {"color": "green", "value": 95}
+              ]
+            },
+            "unit": "percent"
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Average Rating",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "avg(review_rating_total)",
+            "legendFormat": "Average Rating"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 3},
+                {"color": "green", "value": 4}
+              ]
+            },
+            "decimals": 1
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 8}
+      },
+      {
+        "id": 6,
+        "title": "Top Performing Sitters",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(5, sitter_rating_avg)",
+            "legendFormat": "{{sitter_name}}"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true,
+                "job": true,
+                "instance": true
+              },
+              "renameByName": {
+                "sitter_name": "Sitter",
+                "Value": "Rating"
+              }
+            }
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 7,
+        "title": "Revenue by Day",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(payment_amount_total[1d])) by (date)",
+            "legendFormat": "Daily Revenue"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Revenue ($)",
+            "min": 0
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 8,
+        "title": "Customer Satisfaction",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(review_rating_total[7d])",
+            "legendFormat": "Reviews/Day"
+          },
+          {
+            "expr": "avg(review_rating_total)",
+            "legendFormat": "Average Rating"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Count/Rating",
+            "min": 0
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      }
+    ],
+    "time": {
+      "from": "now-30d",
+      "to": "now"
+    },
+    "refresh": "5m"
+  }
+}

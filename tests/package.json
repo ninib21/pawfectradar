@@ -17,25 +17,34 @@
     "report:view": "open tests/results/test-report.html"
   },
   "dependencies": {
-    "@nestjs/testing": "^10.0.0",
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/testing": "^10.4.20",
     "@playwright/test": "^1.40.0",
+    "@testing-library/jest-dom": "^6.7.0",
+    "@types/bcrypt": "^6.0.0",
     "artillery": "^2.0.0",
-    "jest": "^29.7.0",
-    "supertest": "^6.3.0",
     "axios": "^1.6.0",
-    "socket.io-client": "^4.7.0",
-    "faker": "^6.6.6",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
+    "crypto": "^1.0.1",
+    "faker": "^6.6.6",
+    "jest": "^29.7.0",
     "jsonwebtoken": "^9.0.0",
-    "crypto": "^1.0.1"
+    "reflect-metadata": "^0.2.2",
+    "socket.io-client": "^4.7.0",
+    "supertest": "^6.3.0"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.0",
-    "@types/supertest": "^2.0.0",
+    "@testing-library/react": "^16.3.0",
     "@types/bcryptjs": "^2.4.0",
+    "@types/jest": "^29.5.0",
     "@types/jsonwebtoken": "^9.0.0",
-    "ts-jest": "^29.1.0",
-    "jest-environment-jsdom": "^29.7.0"
+    "@types/supertest": "^2.0.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "react-test-renderer": "^18.2.0",
+    "ts-jest": "^29.1.0"
   },
   "jest": {
     "preset": "ts-jest",
@@ -46,7 +55,11 @@
       "!**/*.d.ts",
       "!**/node_modules/**"
     ],
-    "coverageReporters": ["text", "lcov", "html"],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
     "testResultsProcessor": "jest-html-reporter"
   }
 }

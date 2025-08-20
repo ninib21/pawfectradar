@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import * as React from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { quantumAPI } from '../api/apiClient';
 import { quantumWebSocket } from '../api/websocketService';
 
@@ -122,7 +123,7 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
     });
 
     // Track booking update event
-    quantumAPI.trackEvent({
+    quantumAPI.trackEvent('booking_updated', {
       action: 'booking_updated',
       category: 'booking',
       label: updatedBooking.status,
@@ -135,7 +136,8 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      const bookings = await quantumAPI.getBookings();
+      const response = await quantumAPI.getBookings();
+      const bookings = response.data || [];
       
       setState(prev => ({
         ...prev,
@@ -144,12 +146,14 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
       }));
 
       // Subscribe to real-time updates for all bookings
-      bookings.forEach(booking => {
-        quantumWebSocket.subscribeToBooking(booking.id);
-      });
+      if (Array.isArray(bookings)) {
+        bookings.forEach((booking: Booking) => {
+          quantumWebSocket.subscribeToBooking(booking.id);
+        });
+      }
 
       // Track fetch event
-      await quantumAPI.trackEvent({
+      await quantumAPI.trackEvent('bookings_fetched', {
         action: 'bookings_fetched',
         category: 'booking',
         label: 'success',
@@ -169,7 +173,8 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      const newBooking = await quantumAPI.createBooking(bookingData);
+      const response = await quantumAPI.createBooking(bookingData);
+      const newBooking = response.data;
       
       setState(prev => ({
         ...prev,
@@ -182,7 +187,7 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
       quantumWebSocket.subscribeToBooking(newBooking.id);
 
       // Track booking creation
-      await quantumAPI.trackEvent({
+      await quantumAPI.trackEvent('booking_created', {
         action: 'booking_created',
         category: 'booking',
         label: 'success',
@@ -206,7 +211,8 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      const updatedBooking = await quantumAPI.updateBooking(bookingId, bookingData);
+      const response = await quantumAPI.updateBooking(bookingId, bookingData);
+      const updatedBooking = response.data;
       
       setState(prev => ({
         ...prev,
@@ -220,7 +226,7 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
       }));
 
       // Track booking update
-      await quantumAPI.trackEvent({
+      await quantumAPI.trackEvent('booking_updated', {
         action: 'booking_updated',
         category: 'booking',
         label: 'manual_update',
@@ -260,7 +266,7 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
       }));
 
       // Track booking cancellation
-      await quantumAPI.trackEvent({
+      await quantumAPI.trackEvent('booking_cancelled', {
         action: 'booking_cancelled',
         category: 'booking',
         label: 'success',
@@ -316,4 +322,4 @@ export const BookingProvider: React.FC<BookingProviderProps> = ({ children }) =>
       {children}
     </BookingContext.Provider>
   );
-};
+}

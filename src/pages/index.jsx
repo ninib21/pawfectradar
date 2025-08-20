@@ -14,7 +14,7 @@ import Profile from "./Profile";
 
 import DeveloperAccess from "./DeveloperAccess";
 
-import developer-access from "./developer-access";
+import DeveloperAccessPage from "./developer-access";
 
 import onboarding from "./onboarding";
 
@@ -40,7 +40,7 @@ const PAGES = {
     
     DeveloperAccess: DeveloperAccess,
     
-    developer-access: developer-access,
+    'developer-access': DeveloperAccessPage,
     
     onboarding: onboarding,
     
@@ -89,7 +89,7 @@ function PagesContent() {
                 
                 <Route path="/DeveloperAccess" element={<DeveloperAccess />} />
                 
-                <Route path="/developer-access" element={<developer-access />} />
+                <Route path="/developer-access" element={<DeveloperAccessPage />} />
                 
                 <Route path="/onboarding" element={<onboarding />} />
                 

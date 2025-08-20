@@ -1,4 +1,4 @@
-# 🐕 PawfectSitters Frontend - Quantum Security Edition
+# 🐕 PawfectRadar Frontend - Quantum Security Edition
 
 A military-grade React Native mobile application with quantum security features, real-time updates, and comprehensive state management.
 

@@ -1,9 +1,17 @@
 module.exports = {
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
+  transform: {
+    '^.+\\.ts$': ['ts-jest', {
+      tsconfig: {
+        jsx: 'react-jsx',
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+      },
+    }],
+  },
   roots: [
-    '<rootDir>/../backend/src',
-    '<rootDir>/../frontend/src'
+    '<rootDir>/unit'
   ],
   testMatch: [
     '**/__tests__/**/*.test.ts',
@@ -13,7 +21,6 @@ module.exports = {
   ],
   collectCoverageFrom: [
     '../backend/src/**/*.ts',
-    '../frontend/src/**/*.{ts,tsx}',
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/__tests__/**'

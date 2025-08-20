@@ -126,8 +126,7 @@ const App: React.FC = () => {
   const initializeQuantumSecurity = async () => {
     try {
       // Initialize quantum analytics
-      await quantumAPI.trackEvent({
-        action: 'app_initialized',
+      await quantumAPI.trackEvent('app_initialized', {
         category: 'app',
         label: 'quantum_security',
         value: 1,
@@ -145,8 +144,7 @@ const App: React.FC = () => {
       console.error('Global error:', error);
       
       // Track error in analytics
-      quantumAPI.trackEvent({
-        action: 'app_error',
+      quantumAPI.trackEvent('app_error', {
         category: 'error',
         label: isFatal ? 'fatal' : 'non_fatal',
         value: 1,

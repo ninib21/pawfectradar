@@ -101,18 +101,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
       const response = await quantumAPI.login(email, password);
-      const { user } = response;
+      const { user } = response.data;
       
       setState({
-        user,
+        user: user.data,
         isAuthenticated: true,
         isLoading: false,
         error: null,
       });
       
       // Track login event
-      await quantumAPI.trackEvent({
-        action: 'login',
+      await quantumAPI.trackEvent('login', {
         category: 'authentication',
         label: 'success',
         value: 1,
@@ -122,16 +121,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error.message || 'Login failed',
+        error: (error as any)?.message || 'Login failed',
       }));
       
       // Track failed login
-      await quantumAPI.trackEvent({
-        action: 'login_failed',
+      await quantumAPI.trackEvent('login_failed', {
         category: 'authentication',
         label: 'error',
         value: 1,
-        metadata: { error: error.message },
+        metadata: { error: (error as any)?.message },
       });
     }
   };
@@ -143,8 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await quantumAPI.register(userData);
       
       // Track registration event
-      await quantumAPI.trackEvent({
-        action: 'register',
+      await quantumAPI.trackEvent('register', {
         category: 'authentication',
         label: 'success',
         value: 1,
@@ -157,16 +154,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error.message || 'Registration failed',
+        error: (error as any)?.message || 'Registration failed',
       }));
       
       // Track failed registration
-      await quantumAPI.trackEvent({
-        action: 'register_failed',
+      await quantumAPI.trackEvent('register_failed', {
         category: 'authentication',
         label: 'error',
         value: 1,
-        metadata: { error: error.message },
+        metadata: { error: (error as any)?.message },
       });
     }
   };
@@ -190,8 +186,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       
       // Track logout event
-      await quantumAPI.trackEvent({
-        action: 'logout',
+      await quantumAPI.trackEvent('logout', {
         category: 'authentication',
         label: 'success',
         value: 1,
@@ -216,7 +211,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       setState(prev => ({
         ...prev,
-        user: updatedUser,
+        user: updatedUser.data,
         isLoading: false,
       }));
       
@@ -224,8 +219,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await SecureStore.setItemAsync('quantum_user_data', JSON.stringify(updatedUser));
       
       // Track profile update
-      await quantumAPI.trackEvent({
-        action: 'profile_update',
+      await quantumAPI.trackEvent('profile_update', {
         category: 'user',
         label: 'success',
         value: 1,
@@ -235,7 +229,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error.message || 'Profile update failed',
+        error: (error as any)?.message || 'Profile update failed',
       }));
     }
   };
@@ -246,7 +240,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       setState(prev => ({
         ...prev,
-        user,
+        user: user.data,
         isAuthenticated: true,
       }));
       

@@ -77,7 +77,7 @@ test.describe('Authentication Flow', () => {
     await page.click('[data-testid="biometric-login-button"]');
 
     // Verify biometric prompt
-    await expect(page.locator('[data-testid="biometric-prompt"])).toBeVisible();
+    await expect(page.locator('[data-testid="biometric-prompt"]')).toBeVisible();
 
     // Simulate successful biometric authentication
     await page.click('[data-testid="biometric-success"]');

@@ -1,10 +1,35 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
-// 🔐 QUANTUM API CLIENT: Military-grade API client with quantum security
+// Extend AxiosRequestConfig to include _retry property
+interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
+// 🚀 QUANTUM API CLIENT
+// 🔒 MILITARY-GRADE SECURITY + QUANTUM-ENHANCED API COMMUNICATION
+// 📈 QUANTUM-INFINITE SCALABILITY
+// 🚀 QUANTUM-OPTIMIZED PERFORMANCE
+
+export interface APIResponse<T = any> {
+  success: boolean;
+  data: T;
+  message?: string;
+  error?: string;
+}
+
+export interface ErrorResponse {
+  message: string;
+  code?: string;
+  details?: any;
+}
+
 export class QuantumAPIClient {
   private client: AxiosInstance;
   private baseURL: string;
+  private authToken: string | null = null;
+  private refreshToken: string | null = null;
   private isRefreshing = false;
   private failedQueue: Array<{
     resolve: (value?: any) => void;
@@ -12,60 +37,71 @@ export class QuantumAPIClient {
   }> = [];
 
   constructor() {
-    this.baseURL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
-    this.client = this.createClient();
+    this.baseURL = this.getBaseURL();
+    this.client = this.createAxiosInstance();
     this.setupInterceptors();
+    this.loadTokens();
   }
 
-  private createClient(): AxiosInstance {
+  private getBaseURL(): string {
+    if (__DEV__) {
+      return Platform.OS === 'android' 
+        ? 'http://10.0.2.2:3000/api' 
+        : 'http://localhost:3000/api';
+    }
+    return 'https://api.pawfectradar.com/api';
+  }
+
+  private createAxiosInstance(): AxiosInstance {
     return axios.create({
       baseURL: this.baseURL,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
-        'X-Quantum-Security': 'military-grade',
-        'X-Quantum-Encryption': 'post-quantum',
-        'X-Quantum-Monitoring': 'enabled',
+        'Accept': 'application/json',
+        'User-Agent': 'PawfectRadar/1.0.0',
+        'X-Platform': Platform.OS,
+        'X-App-Version': '1.0.0',
       },
     });
   }
 
   private setupInterceptors(): void {
-    // Request interceptor for authentication
+    // Request interceptor
     this.client.interceptors.request.use(
-      async (config) => {
-        const token = await this.getAccessToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+      (config) => {
+        if (this.authToken) {
+          config.headers.Authorization = `Bearer ${this.authToken}`;
         }
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => {
+        return Promise.reject(error);
+      }
     );
 
-    // Response interceptor for token refresh and error handling
+    // Response interceptor
     this.client.interceptors.response.use(
-      (response: AxiosResponse) => response,
+      (response: AxiosResponse) => {
+        return response;
+      },
       async (error: AxiosError) => {
-        const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
-
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        const originalRequest = error.config;
+        
+        if (error.response?.status === 401 && !(originalRequest as ExtendedAxiosRequestConfig)?._retry) {
           if (this.isRefreshing) {
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
             });
           }
 
-          originalRequest._retry = true;
+          (originalRequest as ExtendedAxiosRequestConfig)!._retry = true;
           this.isRefreshing = true;
 
           try {
-            const newToken = await this.refreshToken();
-            if (newToken) {
-              originalRequest.headers!.Authorization = `Bearer ${newToken}`;
-              this.processQueue(null, newToken);
-              return this.client(originalRequest);
-            }
+            await this.refreshAuthToken();
+            this.processQueue(null, null);
+            return this.client(originalRequest!);
           } catch (refreshError) {
             this.processQueue(refreshError, null);
             await this.logout();
@@ -75,48 +111,9 @@ export class QuantumAPIClient {
           }
         }
 
-        return Promise.reject(this.handleError(error));
+        return Promise.reject(error);
       }
     );
-  }
-
-  private async getAccessToken(): Promise<string | null> {
-    try {
-      return await SecureStore.getItemAsync('quantum_access_token');
-    } catch (error) {
-      console.error('Error getting access token:', error);
-      return null;
-    }
-  }
-
-  private async getRefreshToken(): Promise<string | null> {
-    try {
-      return await SecureStore.getItemAsync('quantum_refresh_token');
-    } catch (error) {
-      console.error('Error getting refresh token:', error);
-      return null;
-    }
-  }
-
-  private async refreshToken(): Promise<string | null> {
-    try {
-      const refreshToken = await this.getRefreshToken();
-      if (!refreshToken) throw new Error('No refresh token available');
-
-      const response = await axios.post(`${this.baseURL}/auth/refresh`, {
-        refreshToken,
-      });
-
-      const { accessToken, refreshToken: newRefreshToken } = response.data;
-      
-      await SecureStore.setItemAsync('quantum_access_token', accessToken);
-      await SecureStore.setItemAsync('quantum_refresh_token', newRefreshToken);
-
-      return accessToken;
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      return null;
-    }
   }
 
   private processQueue(error: any, token: string | null): void {
@@ -130,223 +127,681 @@ export class QuantumAPIClient {
     this.failedQueue = [];
   }
 
-  private async logout(): Promise<void> {
+  private async loadTokens(): Promise<void> {
     try {
-      await SecureStore.deleteItemAsync('quantum_access_token');
-      await SecureStore.deleteItemAsync('quantum_refresh_token');
-      await SecureStore.deleteItemAsync('quantum_user_data');
+      this.authToken = await AsyncStorage.getItem('authToken');
+      this.refreshToken = await AsyncStorage.getItem('refreshToken');
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error('Failed to load tokens:', error);
     }
   }
 
-  private handleError(error: AxiosError): Error {
-    if (error.response) {
-      const { status, data } = error.response;
-      switch (status) {
-        case 400:
-          return new Error(`Bad Request: ${data?.message || 'Invalid request'}`);
-        case 401:
-          return new Error('Unauthorized: Please login again');
+  private async saveTokens(authToken: string, refreshToken: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem('authToken', authToken);
+      await AsyncStorage.setItem('refreshToken', refreshToken);
+      this.authToken = authToken;
+      this.refreshToken = refreshToken;
+    } catch (error) {
+      console.error('Failed to save tokens:', error);
+    }
+  }
+
+  private async clearTokens(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('refreshToken');
+      this.authToken = null;
+      this.refreshToken = null;
+    } catch (error) {
+      console.error('Failed to clear tokens:', error);
+    }
+  }
+
+  private async refreshAuthToken(): Promise<void> {
+    if (!this.refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      const response = await this.client.post('/auth/refresh', {
+        refreshToken: this.refreshToken,
+      });
+
+      const { authToken, refreshToken } = response.data.data;
+      await this.saveTokens(authToken, refreshToken);
+    } catch (error) {
+      throw new Error('Failed to refresh token');
+    }
+  }
+
+  private handleError(error: AxiosError): APIResponse {
+    const status = error.response?.status;
+    const data = error.response?.data as any;
+
+    switch (status) {
+      case 400:
+        return {
+          success: false,
+          data: null,
+          error: `Bad Request: ${data?.message || 'Invalid request'}`
+        };
+              case 401:
+          return {
+            success: false,
+            data: null,
+            error: 'Unauthorized: Please log in again'
+          };
         case 403:
-          return new Error('Forbidden: Access denied');
+          return {
+            success: false,
+            data: null,
+            error: 'Forbidden: Access denied'
+          };
         case 404:
-          return new Error('Not Found: Resource not available');
+          return {
+            success: false,
+            data: null,
+            error: 'Not Found: Resource not available'
+          };
         case 422:
-          return new Error(`Validation Error: ${data?.message || 'Invalid data'}`);
+          return {
+            success: false,
+            data: null,
+            error: `Validation Error: ${data?.message || 'Invalid data'}`
+          };
         case 429:
-          return new Error('Too Many Requests: Please try again later');
+          return {
+            success: false,
+            data: null,
+            error: 'Too Many Requests: Please try again later'
+          };
         case 500:
-          return new Error('Server Error: Please try again later');
+          return {
+            success: false,
+            data: null,
+            error: 'Server Error: Please try again later'
+          };
         default:
-          return new Error(`HTTP Error ${status}: ${data?.message || 'Unknown error'}`);
-      }
-    } else if (error.request) {
-      return new Error('Network Error: Please check your connection');
-    } else {
-      return new Error(`Request Error: ${error.message}`);
+          return {
+            success: false,
+            data: null,
+            error: `HTTP Error ${status}: ${data?.message || 'Unknown error'}`
+          };
     }
   }
 
-  // 🔐 AUTHENTICATION METHODS
-  async login(email: string, password: string): Promise<any> {
-    const response = await this.client.post('/auth/login', { email, password });
-    const { accessToken, refreshToken, user } = response.data;
-    
-    await SecureStore.setItemAsync('quantum_access_token', accessToken);
-    await SecureStore.setItemAsync('quantum_refresh_token', refreshToken);
-    await SecureStore.setItemAsync('quantum_user_data', JSON.stringify(user));
-    
-    return response.data;
+  // Authentication methods
+  async login(email: string, password: string): Promise<APIResponse> {
+    try {
+      const response = await this.client.post('/auth/login', {
+        email,
+        password,
+      });
+
+      const { authToken, refreshToken } = response.data.data;
+      await this.saveTokens(authToken, refreshToken);
+
+      return {
+        success: true,
+        data: response.data,
+        message: 'Login successful'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async register(userData: any): Promise<any> {
-    const response = await this.client.post('/auth/register', userData);
-    return response.data;
+  async register(userData: any): Promise<APIResponse> {
+    try {
+      const response = await this.client.post('/auth/register', userData);
+      return {
+        success: true,
+        data: response.data,
+        message: 'User registered successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
   async logout(): Promise<void> {
     try {
-      await this.client.post('/auth/logout');
+      if (this.authToken) {
+        await this.client.post('/auth/logout');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
     } finally {
-      await this.logout();
+      await this.clearTokens();
     }
   }
 
-  // 👥 USER METHODS
-  async getCurrentUser(): Promise<any> {
-    const response = await this.client.get('/users/me');
-    return response.data;
+  async getAuthToken(): Promise<string | null> {
+    return this.authToken;
   }
 
-  async updateProfile(userData: any): Promise<any> {
-    const response = await this.client.put('/users/profile', userData);
-    return response.data;
+  // User methods
+  async getProfile(): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/user/profile');
+      return {
+        success: true,
+        data: response.data,
+        message: 'Profile retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async uploadAvatar(file: any): Promise<any> {
-    const formData = new FormData();
-    formData.append('avatar', file);
-    
-    const response = await this.client.post('/users/avatar', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
+  async getCurrentUser(): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/user/profile');
+      return {
+        success: true,
+        data: response.data,
+        message: 'Current user retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  // 🐕 PET METHODS
-  async getPets(): Promise<any[]> {
-    const response = await this.client.get('/pets');
-    return response.data;
+  async updateProfile(profileData: any): Promise<APIResponse> {
+    try {
+      const response = await this.client.put('/user/profile', profileData);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Profile updated successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async createPet(petData: any): Promise<any> {
-    const response = await this.client.post('/pets', petData);
-    return response.data;
+  // Pet methods
+  async getPets(): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/pets');
+      return {
+        success: true,
+        data: response.data,
+        message: 'Pets retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async updatePet(petId: string, petData: any): Promise<any> {
-    const response = await this.client.put(`/pets/${petId}`, petData);
-    return response.data;
+  async createPet(petData: any): Promise<APIResponse> {
+    try {
+      const response = await this.client.post('/pets', petData);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Pet created successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async deletePet(petId: string): Promise<void> {
-    await this.client.delete(`/pets/${petId}`);
+  async updatePet(petId: string, petData: any): Promise<APIResponse> {
+    try {
+      const response = await this.client.put(`/pets/${petId}`, petData);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Pet updated successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  // 📅 BOOKING METHODS
-  async getBookings(): Promise<any[]> {
-    const response = await this.client.get('/bookings');
-    return response.data;
+  async deletePet(petId: string): Promise<APIResponse> {
+    try {
+      const response = await this.client.delete(`/pets/${petId}`);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Pet deleted successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async createBooking(bookingData: any): Promise<any> {
-    const response = await this.client.post('/bookings', bookingData);
-    return response.data;
+  // Booking methods
+  async getBookings(): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/bookings');
+      return {
+        success: true,
+        data: response.data,
+        message: 'Bookings retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async updateBooking(bookingId: string, bookingData: any): Promise<any> {
-    const response = await this.client.put(`/bookings/${bookingId}`, bookingData);
-    return response.data;
+  async createBooking(bookingData: any): Promise<APIResponse> {
+    try {
+      const response = await this.client.post('/bookings', bookingData);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Booking created successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async cancelBooking(bookingId: string): Promise<any> {
-    const response = await this.client.patch(`/bookings/${bookingId}/cancel`);
-    return response.data;
+  async updateBooking(bookingId: string, bookingData: any): Promise<APIResponse> {
+    try {
+      const response = await this.client.put(`/bookings/${bookingId}`, bookingData);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Booking updated successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  // 🔍 SITTER SEARCH METHODS
-  async searchSitters(filters: any): Promise<any[]> {
-    const response = await this.client.get('/sitters/search', { params: filters });
-    return response.data;
+  async cancelBooking(bookingId: string): Promise<APIResponse> {
+    try {
+      const response = await this.client.post(`/bookings/${bookingId}/cancel`);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Booking cancelled successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async getSitterProfile(sitterId: string): Promise<any> {
-    const response = await this.client.get(`/sitters/${sitterId}`);
-    return response.data;
+  // Sitter methods
+  async getSitters(filters?: any): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/sitters', { params: filters });
+      return {
+        success: true,
+        data: response.data,
+        message: 'Sitters retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  // ⭐ REVIEW METHODS
-  async getReviews(entityId: string, entityType: 'sitter' | 'owner'): Promise<any[]> {
-    const response = await this.client.get(`/reviews/${entityType}/${entityId}`);
-    return response.data;
+  async getSitterProfile(sitterId: string): Promise<APIResponse> {
+    try {
+      const response = await this.client.get(`/sitters/${sitterId}`);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Sitter profile retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async createReview(reviewData: any): Promise<any> {
-    const response = await this.client.post('/reviews', reviewData);
-    return response.data;
+  // Review methods
+  async getReviews(entityId: string, entityType: 'sitter' | 'owner'): Promise<APIResponse> {
+    try {
+      const response = await this.client.get(`/reviews`, {
+        params: { entityId, entityType }
+      });
+      return {
+        success: true,
+        data: response.data,
+        message: 'Reviews retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  // 💳 PAYMENT METHODS
-  async createPaymentIntent(amount: number, currency: string = 'usd'): Promise<any> {
-    const response = await this.client.post('/payments/create-intent', {
-      amount,
-      currency,
-    });
-    return response.data;
+  async submitReview(reviewData: any): Promise<APIResponse> {
+    try {
+      const response = await this.client.post('/reviews', reviewData);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Review submitted successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async confirmPayment(paymentIntentId: string): Promise<any> {
-    const response = await this.client.post('/payments/confirm', {
-      paymentIntentId,
-    });
-    return response.data;
+  // Session methods
+  async getSessions(): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/sessions');
+      return {
+        success: true,
+        data: response.data,
+        message: 'Sessions retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  // 📱 NOTIFICATION METHODS
-  async getNotifications(): Promise<any[]> {
-    const response = await this.client.get('/notifications');
-    return response.data;
+  async updateSession(sessionId: string, sessionData: any): Promise<APIResponse> {
+    try {
+      const response = await this.client.put(`/sessions/${sessionId}`, sessionData);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Session updated successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async markNotificationAsRead(notificationId: string): Promise<void> {
-    await this.client.patch(`/notifications/${notificationId}/read`);
-  }
-
+  // =============================================================================
   // 📊 ANALYTICS METHODS
-  async trackEvent(eventData: any): Promise<void> {
-    await this.client.post('/analytics/events', eventData);
+  // =============================================================================
+
+  async getAnalytics(timeRange: string = 'month'): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/analytics', { params: { timeRange } });
+      return {
+        success: true,
+        data: response.data,
+        message: 'Analytics retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async getAnalytics(timeframe: string): Promise<any> {
-    const response = await this.client.get('/analytics', { params: { timeframe } });
-    return response.data;
+  async getBusinessMetrics(): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/analytics/business-metrics');
+      return {
+        success: true,
+        data: response.data,
+        message: 'Business metrics retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  // 🔄 SESSION METHODS
-  async getSessions(): Promise<any[]> {
-    const response = await this.client.get('/sessions');
-    return response.data;
+  async getUserAnalytics(userId: string): Promise<APIResponse> {
+    try {
+      const response = await this.client.get(`/analytics/users/${userId}`);
+      return {
+        success: true,
+        data: response.data,
+        message: 'User analytics retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async createSession(sessionData: any): Promise<any> {
-    const response = await this.client.post('/sessions', sessionData);
-    return response.data;
+  async getSitterAnalytics(sitterId: string): Promise<APIResponse> {
+    try {
+      const response = await this.client.get(`/analytics/sitters/${sitterId}`);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Sitter analytics retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  async updateSession(sessionId: string, sessionData: any): Promise<any> {
-    const response = await this.client.put(`/sessions/${sessionId}`, sessionData);
-    return response.data;
+  async getAIPerformanceMetrics(): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/analytics/ai-performance');
+      return {
+        success: true,
+        data: response.data,
+        message: 'AI performance metrics retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
+  // =============================================================================
+  // 📞 VIDEO CALLING METHODS
+  // =============================================================================
+
+  async createVideoCall(participants: string[]): Promise<APIResponse> {
+    try {
+      const response = await this.client.post('/video-calling/create', { participants });
+      return {
+        success: true,
+        data: response.data,
+        message: 'Video call created successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
+  async joinVideoCall(sessionId: string): Promise<APIResponse> {
+    try {
+      const response = await this.client.post(`/video-calling/join`, { sessionId });
+      return {
+        success: true,
+        data: response.data,
+        message: 'Joined video call successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
+  async endVideoCall(sessionId: string): Promise<APIResponse> {
+    try {
+      const response = await this.client.post(`/video-calling/end`, { sessionId });
+      return {
+        success: true,
+        data: response.data,
+        message: 'Video call ended successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
+  // =============================================================================
   // 📁 FILE UPLOAD METHODS
-  async uploadFile(file: any, type: 'image' | 'document'): Promise<any> {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', type);
-    
-    const response = await this.client.post('/files/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
+  // =============================================================================
+
+  async uploadFile(file: any, type: 'document' | 'image'): Promise<APIResponse> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', type);
+      
+      const response = await this.client.post('/files/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return {
+        success: true,
+        data: response.data,
+        message: 'File uploaded successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
   }
 
-  // 🌐 WEBSOCKET CONNECTION
+  async deleteFile(fileId: string): Promise<APIResponse> {
+    try {
+      const response = await this.client.delete(`/files/${fileId}`);
+      return {
+        success: true,
+        data: response.data,
+        message: 'File deleted successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
+  // =============================================================================
+  // 💳 PAYMENT METHODS
+  // =============================================================================
+
+  async getPaymentMethods(): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/payments/methods');
+      return {
+        success: true,
+        data: response.data,
+        message: 'Payment methods retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
+  // =============================================================================
+  // 🔔 NOTIFICATION METHODS
+  // =============================================================================
+
+  async getNotificationSettings(): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/notifications/settings');
+      return {
+        success: true,
+        data: response.data,
+        message: 'Notification settings retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
+  async updateNotificationSettings(settings: any): Promise<APIResponse> {
+    try {
+      const response = await this.client.put('/notifications/settings', settings);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Notification settings updated successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
+  async getNotificationHistory(limit: number = 50, offset: number = 0): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/notifications/history', {
+        params: { limit, offset },
+      });
+      return {
+        success: true,
+        data: response.data,
+        message: 'Notification history retrieved successfully'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
+  // Review methods
+  async createReview(reviewData: any): Promise<APIResponse> {
+    try {
+      const response = await this.client.post('/reviews', reviewData);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  // Analytics methods
+  async trackEvent(eventName: string, properties?: any): Promise<void> {
+    try {
+      await this.client.post('/analytics/track', {
+        event: eventName,
+        properties,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Failed to track event:', error);
+    }
+  }
+
+  // Health check
+  async healthCheck(): Promise<APIResponse> {
+    try {
+      const response = await this.client.get('/health');
+      return {
+        success: true,
+        data: response.data,
+        message: 'Health check successful'
+      };
+    } catch (error) {
+      return this.handleError(error as AxiosError);
+    }
+  }
+
+  // WebSocket URL
   getWebSocketURL(): string {
-    return this.baseURL.replace('http', 'ws') + '/ws';
+    const baseURL = this.baseURL.replace('/api', '');
+    return baseURL.replace('http', 'ws');
+  }
+
+  // Generic HTTP methods for video calling and other services
+  async get(url: string, config?: any): Promise<AxiosResponse> {
+    try {
+      const response = await this.client.get(url, config);
+      return response;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  async post(url: string, data?: any, config?: any): Promise<AxiosResponse> {
+    try {
+      const response = await this.client.post(url, data, config);
+      return response;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  async put(url: string, data?: any, config?: any): Promise<AxiosResponse> {
+    try {
+      const response = await this.client.put(url, data, config);
+      return response;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
+  }
+
+  async delete(url: string, config?: any): Promise<AxiosResponse> {
+    try {
+      const response = await this.client.delete(url, config);
+      return response;
+    } catch (error) {
+      throw this.handleError(error as AxiosError);
+    }
   }
 }
 
 // Export singleton instance
 export const quantumAPI = new QuantumAPIClient();
-export default quantumAPI;
