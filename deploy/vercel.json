@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "quantum-pawfectsitters-frontend",
+  "name": "quantum-pawfectradar-frontend",
   "builds": [
     {
       "src": "frontend/package.json",
@@ -43,18 +43,12 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "https://api.quantum-pawfectsitters.com",
-    "REACT_APP_WEBSOCKET_URL": "wss://ws.quantum-pawfectsitters.com",
+    "REACT_APP_API_URL": "https://api.quantum-pawfectradar.com",
+    "REACT_APP_WEBSOCKET_URL": "wss://ws.quantum-pawfectradar.com",
     "REACT_APP_QUANTUM_ENABLED": "true",
     "REACT_APP_QUANTUM_AUTH": "true",
     "REACT_APP_QUANTUM_ENCRYPTION": "true",
     "REACT_APP_QUANTUM_BIOMETRICS": "true"
-  },
-  "functions": {
-    "frontend/api/**/*.js": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 30
-    }
   },
   "headers": [
     {
@@ -102,7 +96,7 @@
   "redirects": [
     {
       "source": "/api",
-      "destination": "https://api.quantum-pawfectsitters.com",
+      "destination": "https://api.quantum-pawfectradar.com",
       "permanent": true,
       "headers": {
         "X-Quantum-Redirect": "api-gateway"
@@ -112,7 +106,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://api.quantum-pawfectsitters.com/api/$1"
+      "destination": "https://api.quantum-pawfectradar.com/api/$1"
     }
   ],
   "cleanUrls": true,
