@@ -11,293 +11,36 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  firstName         String
-  lastName          String
-  phone             String?
-  role              UserRole  @default(OWNER)
-  status            UserStatus @default(ACTIVE)
-  verificationStatus VerificationStatus @default(PENDING)
-  profilePicture    String?
-  bio               String?
-  hourlyRate        Float?
-  rating            Float     @default(0)
-  reviewCount       Int       @default(0)
-  isVerified        Boolean   @default(false)
-  stripeCustomerId  String?
-  stripeAccountId   String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  lastLogin         DateTime?
-
-  // Relations
-  pets              Pet[]
-  bookingsAsOwner   Booking[] @relation("OwnerBookings")
-  bookingsAsSitter  Booking[] @relation("SitterBookings")
-  reviewsGiven      Review[]  @relation("ReviewerReviews")
-  reviewsReceived   Review[]  @relation("ReviewedUserReviews")
-  messages          Message[]
-  notifications     Notification[]
-  sessions          Session[]
-  files             File[]
-  emergencyContacts EmergencyContact[]
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("users")
 }
 
 model Pet {
-  id          String   @id @default(cuid())
-  name        String
-  type        PetType
-  breed       String?
-  age         Int?
-  weight      Float?
-  specialNeeds String?
-  photos      String[]
-  ownerId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  bookings    Booking[]
+  id        String   @id @default(cuid())
+  name      String
+  type      String
+  breed     String?
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("pets")
 }
 
 model Booking {
-  id                String        @id @default(cuid())
-  ownerId           String
-  sitterId          String
-  startDate         DateTime
-  endDate           DateTime
-  status            BookingStatus @default(PENDING)
-  paymentStatus     PaymentStatus @default(PENDING)
-  totalAmount       Float
-  hourlyRate        Float
-  location          String
-  specialInstructions String?
-  stripePaymentIntentId String?
-  confirmationDate  DateTime?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-
-  // Relations
-  owner             User          @relation("OwnerBookings", fields: [ownerId], references: [id], onDelete: Cascade)
-  sitter            User          @relation("SitterBookings", fields: [sitterId], references: [id], onDelete: Cascade)
-  pets              Pet[]
-  payments          Payment[]
-  reviews           Review[]
-  messages          Message[]
-  sessions          Session[]
+  id        String   @id @default(cuid())
+  petId     String
+  sitterId  String
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("pending") // pending, confirmed, completed, cancelled
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("bookings")
-}
-
-model Payment {
-  id                String        @id @default(cuid())
-  bookingId         String
-  amount            Float
-  currency          String        @default("USD")
-  status            PaymentStatus @default(PENDING)
-  paymentMethod     PaymentMethod
-  stripePaymentIntentId String?
-  transactionDate   DateTime      @default(now())
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-
-  // Relations
-  booking           Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-
-  @@map("payments")
-}
-
-model Review {
-  id              String   @id @default(cuid())
-  bookingId       String
-  reviewerId      String
-  reviewedUserId  String
-  rating          Float
-  comment         String?
-  reviewDate      DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  booking         Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  reviewer        User     @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
-  reviewedUser    User     @relation("ReviewedUserReviews", fields: [reviewedUserId], references: [id], onDelete: Cascade)
-
-  @@map("reviews")
-}
-
-model Message {
-  id        String   @id @default(cuid())
-  bookingId String
-  senderId  String
-  content   String
-  type      MessageType @default(TEXT)
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
-
-  @@map("messages")
-}
-
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  type      NotificationType
-  title     String
-  message   String
-  isRead    Boolean          @default(false)
-  data      Json?
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-
-  // Relations
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
-}
-
-model Session {
-  id        String        @id @default(cuid())
-  bookingId String
-  userId    String
-  startTime DateTime?
-  endTime   DateTime?
-  status    SessionStatus @default(ACTIVE)
-  notes     String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-
-  // Relations
-  booking   Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model File {
-  id        String   @id @default(cuid())
-  userId    String
-  filename  String
-  originalName String
-  mimeType  String
-  size      Int
-  url       String
-  type      FileType
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("files")
-}
-
-model EmergencyContact {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  phone     String
-  email     String?
-  relationship String
-  isPrimary Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("emergency_contacts")
-}
-
-// Enums
-enum UserRole {
-  OWNER
-  SITTER
-  ADMIN
-}
-
-enum UserStatus {
-  ACTIVE
-  PENDING
-  SUSPENDED
-  INACTIVE
-}
-
-enum VerificationStatus {
-  PENDING
-  VERIFIED
-  REJECTED
-}
-
-enum PetType {
-  DOG
-  CAT
-  BIRD
-  FISH
-  OTHER
-}
-
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
-
-enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  REFUNDED
-}
-
-enum PaymentMethod {
-  CREDIT_CARD
-  DEBIT_CARD
-  PAYPAL
-  APPLE_PAY
-  GOOGLE_PAY
-}
-
-enum MessageType {
-  TEXT
-  IMAGE
-  VOICE
-  LOCATION
-}
-
-enum NotificationType {
-  BOOKING_CONFIRMED
-  PAYMENT_RECEIVED
-  SESSION_STARTED
-  SESSION_ENDED
-  NEW_MESSAGE
-  REVIEW_RECEIVED
-  EMERGENCY_ALERT
-}
-
-enum SessionStatus {
-  ACTIVE
-  PAUSED
-  COMPLETED
-  CANCELLED
-}
-
-enum FileType {
-  PROFILE_PICTURE
-  PET_PHOTO
-  VERIFICATION_DOCUMENT
-  MESSAGE_ATTACHMENT
-  RECEIPT
 }

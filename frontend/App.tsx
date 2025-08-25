@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -23,7 +23,6 @@ import ProfileScreen from './src/screens/profile/ProfileScreen';
 import SearchScreen from './src/screens/search/SearchScreen';
 
 // Quantum Components
-import { QuantumLoadingScreen } from './src/components/QuantumLoadingScreen';
 import { QuantumSplashScreen } from './src/components/QuantumSplashScreen';
 
 const Stack = createStackNavigator();
@@ -109,9 +108,9 @@ export default function App() {
   useEffect(() => {
     // Quantum initialization
     initializeQuantumApp();
-  }, []);
+  }, [initializeQuantumApp]);
 
-  const initializeQuantumApp = async () => {
+  const initializeQuantumApp = useCallback(async () => {
     try {
       // Simulate quantum security initialization
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -126,7 +125,7 @@ export default function App() {
       console.error('Quantum initialization error:', error);
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const checkAuthenticationStatus = async () => {
     // TODO: Implement quantum authentication check
